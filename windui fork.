@@ -6393,20 +6393,17 @@ local as
 local at=ak and 30 or 20
 local au=aq.Size.X.Offset
 
-function am.Set(av,aw,ax,ay)
+am.Set(av,aw,ax,ay)
+
 if not ay then
 if aw then
-ad(aq.Frame,0.35,{
-Position=UDim2.new(0,au-at-2,0.5,0),
-},Enum.EasingStyle.Back,Enum.EasingDirection.Out):Play()
+ad(aq.Frame,0.45,{Position=UDim2.new(0,au-at-2,0.5,0)},Enum.EasingStyle.Elastic,Enum.EasingDirection.Out):Play()
 ab.SetThemeTag(aq.Frame.Bar.Highlight.Glass,{ImageColor3="Toggle"},0.15)
-ad(aq.Frame.Bar.Highlight.Glass,0.15,{ImageTransparency=0},Enum.EasingStyle.Quint,Enum.EasingDirection.Out):Play()
+ad(aq.Frame.Bar.Highlight.Glass,0.2,{ImageTransparency=0},Enum.EasingStyle.Sine,Enum.EasingDirection.Out):Play()
 else
-ad(aq.Frame,0.35,{
-Position=UDim2.new(0,2,0.5,0),
-},Enum.EasingStyle.Back,Enum.EasingDirection.Out):Play()
+ad(aq.Frame,0.45,{Position=UDim2.new(0,2,0.5,0)},Enum.EasingStyle.Elastic,Enum.EasingDirection.Out):Play()
 ab.SetThemeTag(aq.Frame.Bar.Highlight.Glass,{ImageColor3="Text"},0.15)
-ad(aq.Frame.Bar.Highlight.Glass,0.15,{ImageTransparency=0.85},Enum.EasingStyle.Quint,Enum.EasingDirection.Out):Play()
+ad(aq.Frame.Bar.Highlight.Glass,0.2,{ImageTransparency=0.85},Enum.EasingStyle.Sine,Enum.EasingDirection.Out):Play()
 end
 else
 if aw then
@@ -11612,7 +11609,7 @@ TopBarButtonIconSize=at.TopBarButtonIconSize,
 
 ToggleKey=at.ToggleKey,
 ElementsRadius=at.ElementsRadius,
-Radius=at.Radius or 16,
+Radius=at.Radius or 18,
 Transparent=at.Transparent or false,
 HideSearchBar=at.HideSearchBar~=false,
 ScrollBarEnabled=at.ScrollBarEnabled or false,
