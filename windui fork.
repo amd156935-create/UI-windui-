@@ -4,7 +4,7 @@
     | |/ |/ / / _ \/ _  / /_/ // /  
     |__/|__/_/_//_/\_,_/\____/___/
     
-    v1.6.64  |  2026-04-05  |  Roblox UI Library for scripts
+    v1.6.64  |  2026-04-24  |  Roblox UI Library for scripts
     
     To view the source code, see the `src/` folder on the official GitHub repository.
     
@@ -18,7 +18,7 @@ local a a={cache={}, load=function(b)if not a.cache[b]then a.cache[b]={c=a[b]()}
 
 local d=b(game:GetService"ReplicatedStorage":WaitForChild("GetIcons",99999):InvokeServer())
 
-function parseIconString(e)
+local function parseIconString(e)
 if type(e)=="string"then
 local f=e:find":"
 if f then
@@ -594,7 +594,7 @@ end
 end
 
 function p.GetThemeProperty(r,u)
-function getValue(v,x)
+local function getValue(v,x)
 local z=x[v]
 
 if z==nil then
@@ -697,7 +697,7 @@ return v
 end
 
 function p.UpdateTheme(r,u,v,x,z,A)
-function ApplyTheme(B)
+local function ApplyTheme(B)
 for C,F in pairs(B.Properties or{})do
 local G=p.GetThemeProperty(F,p.Theme)
 if G~=nil then
@@ -895,11 +895,11 @@ return f:Create(r,TweenInfo.new(u,...),v)
 end
 
 function p.NewRoundFrame(r,u,v,x,z,A)
-function getImageForType(B)
+local function getImageForType(B)
 return p.Shapes[B]
 end
 
-function getSliceCenterForType(B)
+local function getSliceCenterForType(B)
 return not table.find({"Shadow-sm","Glass-0.7","Glass-1","Glass-1.4"},B)
 and Rect.new(256,256,256,256)
 or Rect.new(512,512,512,512)
@@ -920,7 +920,7 @@ B[C]=F
 end
 end
 
-function UpdateSliceScale(C)
+local function UpdateSliceScale(C)
 local F=not table.find({"Shadow-sm","Glass-0.7","Glass-1","Glass-1.4"},u)
 and(C/(256))
 or(C/512)
@@ -972,152 +972,93 @@ function p.SetDraggable(v)
 p.CanDraggable=v
 end
 
-function p.Drag(v, x, z)
-    local G = {
-        CanDraggable = true,
-        cleanup = nil
-    }
-    if not x or typeof(x) ~= "table" then
-        x = {v}
-    end
-    local function IsMouseOverFrame(Frame, Position)
-        if not Frame or not Position then return false end
-        local AbsPos, AbsSize = Frame.AbsolutePosition, Frame.AbsoluteSize
-        return Position.X >= AbsPos.X and Position.X <= AbsPos.X + AbsSize.X 
-           and Position.Y >= AbsPos.Y and Position.Y <= AbsPos.Y + AbsSize.Y
-    end
-    local function GetDistance(pos1, pos2)
-        return math.sqrt((pos2.X - pos1.X)^2 + (pos2.Y - pos1.Y)^2)
-    end
-    local dragging = false
-    local dragStart = nil
-    local startPos = nil
-    local dragDistance = 0
-    local DRAG_THRESHOLD =1
-    local originalZIndex = v.ZIndex
-    local isDraggingStarted = false
-    local currentTouch = nil
-    local activeDragFrame = nil
-    local mouseButton1Connection = nil
-    local touchEndedConnection = nil
-    local movementConnection = nil
-    local inputEndedConnections = {}
-    local function updatePosition(input)
-        if not dragging or not dragStart or not G.CanDraggable then return end
-        local delta = input.Position - dragStart
-        dragDistance = GetDistance(dragStart, input.Position)
-        p.Tween(v, 0.02, {
-            Position = UDim2.new(
-                startPos.X.Scale,
-                startPos.X.Offset + delta.X,
-                startPos.Y.Scale,
-                startPos.Y.Offset + delta.Y
-            )
-        }):Play()
-        if z and type(z) == "function" then
-            z(true, activeDragFrame, dragDistance)
-        end
-    end
-    local function resetDragState()
-        dragging = false
-        dragStart = nil
-        startPos = nil
-        dragDistance = 0
-        isDraggingStarted = false
-        currentTouch = nil
-        activeDragFrame = nil
-        if mouseButton1Connection then
-            mouseButton1Connection:Disconnect()
-            mouseButton1Connection = nil
-        end
-        if touchEndedConnection then
-            touchEndedConnection:Disconnect()
-            touchEndedConnection = nil
-        end
-        if movementConnection then
-            movementConnection:Disconnect()
-            movementConnection = nil
-        end
-    end
-    local function onInputEnded()
-        if dragging then
-            local wasDragged = dragDistance > DRAG_THRESHOLD
-            if z and type(z) == "function" then
-                z(false, activeDragFrame, wasDragged)
-            end
-            resetDragState()
-        end
-    end
-    local function onInputEndedHandler(endInput)
-        if not dragging then return end
-        if endInput.UserInputType == Enum.UserInputType.MouseButton1 then
-            onInputEnded()
-        elseif endInput.UserInputType == Enum.UserInputType.Touch and endInput == currentTouch then
-            onInputEnded()
-        end
-    end
-    local function onMovement(input)
-        if not dragging or not G.CanDraggable then return end
-        if input.UserInputType == Enum.UserInputType.MouseMovement or input == currentTouch then
-            if not isDraggingStarted and dragDistance > DRAG_THRESHOLD then
-                isDraggingStarted = true
-                if z and type(z) == "function" then
-                    z("start", activeDragFrame)
-                end
-            end
-            updatePosition(input)
-        end
-    end
-    local function onInputBegan(input, dragFrame)
-        if not G.CanDraggable or dragging then return end
-        local isValidInput = input.UserInputType == Enum.UserInputType.MouseButton1 
-                          or input.UserInputType == Enum.UserInputType.Touch
-        if not isValidInput or input.UserInputState ~= Enum.UserInputState.Begin then return end
-        if IsMouseOverFrame(dragFrame, input.Position) then
-            dragging = true
-            dragStart = input.Position
-            startPos = v.Position
-            dragDistance = 0
-            isDraggingStarted = false
-            activeDragFrame = dragFrame
-            if input.UserInputType == Enum.UserInputType.Touch then
-                currentTouch = input
-            else
-                currentTouch = nil
-            end
-            mouseButton1Connection = e.InputEnded:Connect(function(endInput)
-                if endInput.UserInputType == Enum.UserInputType.MouseButton1 then
-                    onInputEndedHandler(endInput)
-                end
-            end)
-            touchEndedConnection = e.InputEnded:Connect(function(endInput)
-                if endInput.UserInputType == Enum.UserInputType.Touch then
-                    onInputEndedHandler(endInput)
-                end
-            end)
-            movementConnection = e.InputChanged:Connect(function(moveInput)
-                if moveInput.UserInputType == Enum.UserInputType.MouseMovement 
-                   or moveInput.UserInputType == Enum.UserInputType.Touch then
-                    onMovement(moveInput)
-                end
-            end)
-        end
-    end
-    for _, dragFrame in pairs(x) do
-        dragFrame.InputBegan:Connect(function(input)
-            onInputBegan(input, dragFrame)
-        end)
-    end
-    function G.Set(_, canDrag)
-        G.CanDraggable = canDrag
-        if not canDrag and dragging then
-            resetDragState()
-        end
-    end
-    function G.Cleanup()
-        resetDragState()
-    end
-    return G
+function p.Drag(v,x,z)
+local A
+local B,C,F
+local G={
+CanDraggable=true,
+}
+
+if not x or typeof(x)~="table"then
+x={v}
+end
+
+local function update(H)
+if not B or not G.CanDraggable then
+return
+end
+
+local J=H.Position-C
+p.Tween(v,0.02,{
+Position=UDim2.new(
+F.X.Scale,
+F.X.Offset+J.X,
+F.Y.Scale,
+F.Y.Offset+J.Y
+),
+}):Play()
+end
+
+for H,J in pairs(x)do
+J.InputBegan:Connect(function(L)
+if
+(
+L.UserInputType==Enum.UserInputType.MouseButton1
+or L.UserInputType==Enum.UserInputType.Touch
+)and G.CanDraggable
+then
+if A==nil then
+A=J
+B=true
+C=L.Position
+F=v.Position
+
+if z and typeof(z)=="function"then
+z(true,A)
+end
+
+L.Changed:Connect(function()
+if L.UserInputState==Enum.UserInputState.End then
+B=false
+A=nil
+
+if z and typeof(z)=="function"then
+z(false,nil)
+end
+end
+end)
+end
+end
+end)
+
+J.InputChanged:Connect(function(L)
+if B and A==J then
+if
+L.UserInputType==Enum.UserInputType.MouseMovement
+or L.UserInputType==Enum.UserInputType.Touch
+then
+update(L)
+end
+end
+end)
+end
+
+e.InputChanged:Connect(function(H)
+if B and A~=nil then
+if
+H.UserInputType==Enum.UserInputType.MouseMovement
+or H.UserInputType==Enum.UserInputType.Touch
+then
+update(H)
+end
+end
+end)
+
+function G.Set(H,J)
+G.CanDraggable=J
+end
+
+return G
 end
 
 l.Init(r,"Icon")
@@ -1666,7 +1607,7 @@ return f end function a.f()
 
 
 
-local b=4294967296;local d=b-1;function c(e,f)local g,h=0,1;while e~=0 or f~=0 do local j,l=e%2,f%2;local m=(j+l)%2;g=g+m*h;e=math.floor(e/2)f=math.floor(f/2)h=h*2 end;return g%b end;function k(e,f,g,...)local h;if f then e=e%b;f=f%b;h=c(e,f)if g then h=k(h,g,...)end;return h elseif e then return e%b else return 0 end end;function n(e,f,g,...)local h;if f then e=e%b;f=f%b;h=(e+f-c(e,f))/2;if g then h=n(h,g,...)end;return h elseif e then return e%b else return d end end;function o(e)return d-e end;function q(e,f)if f<0 then return lshift(e,-f)end;return math.floor(e%4294967296/2^f)end;function s(e,f)if f>31 or f<-31 then return 0 end;return q(e%b,f)end;function lshift(e,f)if f<0 then return s(e,-f)end;return e*2^f%4294967296 end;function t(e,f)e=e%b;f=f%32;local g=n(e,2^f-1)return s(e,f)+lshift(g,32-f)end;local e={0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2}function w(f)return string.gsub(f,".",function(g)return string.format("%02x",string.byte(g))end)end;function y(f,g)local h=""for j=1,g do local l=f%256;h=string.char(l)..h;f=(f-l)/256 end;return h end;function D(f,g)local h=0;for j=g,g+3 do h=h*256+string.byte(f,j)end;return h end;function E(f,g)local h=64-(g+9)%64;g=y(8*g,8)f=f.."\128"..string.rep("\0",h)..g;assert(#f%64==0)return f end;function I(f)f[1]=0x6a09e667;f[2]=0xbb67ae85;f[3]=0x3c6ef372;f[4]=0xa54ff53a;f[5]=0x510e527f;f[6]=0x9b05688c;f[7]=0x1f83d9ab;f[8]=0x5be0cd19;return f end;function K(f,g,h)local j={}for l=1,16 do j[l]=D(f,g+(l-1)*4)end;for l=17,64 do local m=j[l-15]local p=k(t(m,7),t(m,18),s(m,3))m=j[l-2]j[l]=(j[l-16]+p+j[l-7]+k(t(m,17),t(m,19),s(m,10)))%b end;local l,m,p,r,u,v,x,z=h[1],h[2],h[3],h[4],h[5],h[6],h[7],h[8]for A=1,64 do local B=k(t(l,2),t(l,13),t(l,22))local C=k(n(l,m),n(l,p),n(m,p))local F=(B+C)%b;local G=k(t(u,6),t(u,11),t(u,25))local H=k(n(u,v),n(o(u),x))local J=(z+G+H+e[A]+j[A])%b;z=x;x=v;v=u;u=(r+J)%b;r=p;p=m;m=l;l=(J+F)%b end;h[1]=(h[1]+l)%b;h[2]=(h[2]+m)%b;h[3]=(h[3]+p)%b;h[4]=(h[4]+r)%b;h[5]=(h[5]+u)%b;h[6]=(h[6]+v)%b;h[7]=(h[7]+x)%b;h[8]=(h[8]+z)%b end;function Z(f)f=E(f,#f)local g=I{}for h=1,#f,64 do K(f,h,g)end;return w(y(g[1],4)..y(g[2],4)..y(g[3],4)..y(g[4],4)..y(g[5],4)..y(g[6],4)..y(g[7],4)..y(g[8],4))end;local f;local g={["\\"]="\\",["\""]="\"",["\b"]="b",["\f"]="f",["\n"]="n",["\r"]="r",["\t"]="t"}local h={["/"]="/"}for j,l in pairs(g)do h[l]=j end;local j=function(j)return"\\"..(g[j]or string.format("u%04x",j:byte()))end;local l=function(l)return"null"end;local m=function(m,p)local r={}p=p or{}if p[m]then error"circular reference"end;p[m]=true;if rawget(m,1)~=nil or next(m)==nil then local u=0;for v in pairs(m)do if type(v)~="number"then error"invalid table: mixed or invalid key types"end;u=u+1 end;if u~=#m then error"invalid table: sparse array"end;for v,x in ipairs(m)do table.insert(r,f(x,p))end;p[m]=nil;return"["..table.concat(r,",").."]"else for u,v in pairs(m)do if type(u)~="string"then error"invalid table: mixed or invalid key types"end;table.insert(r,f(u,p)..":"..f(v,p))end;p[m]=nil;return"{"..table.concat(r,",").."}"end end;local p=function(p)return'"'..p:gsub('[%z\1-\31\\"]',j)..'"'end;local r=function(r)if r~=r or r<=-math.huge or r>=math.huge then error("unexpected number value '"..tostring(r).."'")end;return string.format("%.14g",r)end;local u={["nil"]=l,table=m,string=p,number=r,boolean=tostring}f=function(v,x)local z=type(v)local A=u[z]if A then return A(v,x)end;error("unexpected type '"..z.."'")end;local v=function(v)return f(v)end;local x;local z=function(...)local z={}for A=1,select("#",...)do z[select(A,...)]=true end;return z end;local A=z(" ","\t","\r","\n")local B=z(" ","\t","\r","\n","]","}",",")local C=z("\\","/",'"',"b","f","n","r","t","u")local F=z("true","false","null")local G={["true"]=true,["false"]=false,null=nil}local H=function(H,J,L,M)for N=J,#H do if L[H:sub(N,N)]~=M then return N end end;return#H+1 end;local J=function(J,L,M)local N=1;local O=1;for P=1,L-1 do O=O+1;if J:sub(P,P)=="\n"then N=N+1;O=1 end end;error(string.format("%s at line %d col %d",M,N,O))end;local L=function(L)local M=math.floor;if L<=0x7f then return string.char(L)elseif L<=0x7ff then return string.char(M(L/64)+192,L%64+128)elseif L<=0xffff then return string.char(M(L/4096)+224,M(L%4096/64)+128,L%64+128)elseif L<=0x10ffff then return string.char(M(L/262144)+240,M(L%262144/4096)+128,M(L%4096/64)+128,L%64+128)end;error(string.format("invalid unicode codepoint '%x'",L))end;local M=function(M)local N=tonumber(M:sub(1,4),16)local O=tonumber(M:sub(7,10),16)if O then return L((N-0xd800)*0x400+O-0xdc00+0x10000)else return L(N)end end;local N=function(N,O)local P=""local Q=O+1;local R=Q;while Q<=#N do local S=N:byte(Q)if S<32 then J(N,Q,"control character in string")elseif S==92 then P=P..N:sub(R,Q-1)Q=Q+1;local T=N:sub(Q,Q)if T=="u"then local U=N:match("^[dD][89aAbB]%x%x\\u%x%x%x%x",Q+1)or N:match("^%x%x%x%x",Q+1)or J(N,Q-1,"invalid unicode escape in string")P=P..M(U)Q=Q+#U else if not C[T]then J(N,Q-1,"invalid escape char '"..T.."' in string")end;P=P..h[T]end;R=Q+1 elseif S==34 then P=P..N:sub(R,Q-1)return P,Q+1 end;Q=Q+1 end;J(N,O,"expected closing quote for string")end;local O=function(O,P)local Q=H(O,P,B)local R=O:sub(P,Q-1)local S=tonumber(R)if not S then J(O,P,"invalid number '"..R.."'")end;return S,Q end;local P=function(P,Q)local R=H(P,Q,B)local S=P:sub(Q,R-1)if not F[S]then J(P,Q,"invalid literal '"..S.."'")end;return G[S],R end;local Q=function(Q,R)local S={}local T=1;R=R+1;while 1 do local U;R=H(Q,R,A,true)if Q:sub(R,R)=="]"then R=R+1;break end;U,R=x(Q,R)S[T]=U;T=T+1;R=H(Q,R,A,true)local V=Q:sub(R,R)R=R+1;if V=="]"then break end;if V~=","then J(Q,R,"expected ']' or ','")end end;return S,R end;local R=function(R,S)local T={}S=S+1;while 1 do local U,V;S=H(R,S,A,true)if R:sub(S,S)=="}"then S=S+1;break end;if R:sub(S,S)~='"'then J(R,S,"expected string for key")end;U,S=x(R,S)S=H(R,S,A,true)if R:sub(S,S)~=":"then J(R,S,"expected ':' after key")end;S=H(R,S+1,A,true)V,S=x(R,S)T[U]=V;S=H(R,S,A,true)local W=R:sub(S,S)S=S+1;if W=="}"then break end;if W~=","then J(R,S,"expected '}' or ','")end end;return T,S end;local S={['"']=N,["0"]=O,["1"]=O,["2"]=O,["3"]=O,["4"]=O,["5"]=O,["6"]=O,["7"]=O,["8"]=O,["9"]=O,["-"]=O,t=P,f=P,n=P,["["]=Q,["{"]=R}x=function(T,U)local V=T:sub(U,U)local W=S[V]if W then return W(T,U)end;J(T,U,"unexpected character '"..V.."'")end;local T=function(T)if type(T)~="string"then error("expected argument of type string, got "..type(T))end;local U,V=x(T,H(T,1,A,true))V=H(T,V,A,true)if V<=#T then J(T,V,"trailing garbage")end;return U end;
+local b=4294967296;local d=b-1;local function c(e,f)local g,h=0,1;while e~=0 or f~=0 do local j,l=e%2,f%2;local m=(j+l)%2;g=g+m*h;e=math.floor(e/2)f=math.floor(f/2)h=h*2 end;return g%b end;local function k(e,f,g,...)local h;if f then e=e%b;f=f%b;h=c(e,f)if g then h=k(h,g,...)end;return h elseif e then return e%b else return 0 end end;local function n(e,f,g,...)local h;if f then e=e%b;f=f%b;h=(e+f-c(e,f))/2;if g then h=n(h,g,...)end;return h elseif e then return e%b else return d end end;local function o(e)return d-e end;local function q(e,f)if f<0 then return lshift(e,-f)end;return math.floor(e%4294967296/2^f)end;local function s(e,f)if f>31 or f<-31 then return 0 end;return q(e%b,f)end;local function lshift(e,f)if f<0 then return s(e,-f)end;return e*2^f%4294967296 end;local function t(e,f)e=e%b;f=f%32;local g=n(e,2^f-1)return s(e,f)+lshift(g,32-f)end;local e={0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2}local function w(f)return string.gsub(f,".",function(g)return string.format("%02x",string.byte(g))end)end;local function y(f,g)local h=""for j=1,g do local l=f%256;h=string.char(l)..h;f=(f-l)/256 end;return h end;local function D(f,g)local h=0;for j=g,g+3 do h=h*256+string.byte(f,j)end;return h end;local function E(f,g)local h=64-(g+9)%64;g=y(8*g,8)f=f.."\128"..string.rep("\0",h)..g;assert(#f%64==0)return f end;local function I(f)f[1]=0x6a09e667;f[2]=0xbb67ae85;f[3]=0x3c6ef372;f[4]=0xa54ff53a;f[5]=0x510e527f;f[6]=0x9b05688c;f[7]=0x1f83d9ab;f[8]=0x5be0cd19;return f end;local function K(f,g,h)local j={}for l=1,16 do j[l]=D(f,g+(l-1)*4)end;for l=17,64 do local m=j[l-15]local p=k(t(m,7),t(m,18),s(m,3))m=j[l-2]j[l]=(j[l-16]+p+j[l-7]+k(t(m,17),t(m,19),s(m,10)))%b end;local l,m,p,r,u,v,x,z=h[1],h[2],h[3],h[4],h[5],h[6],h[7],h[8]for A=1,64 do local B=k(t(l,2),t(l,13),t(l,22))local C=k(n(l,m),n(l,p),n(m,p))local F=(B+C)%b;local G=k(t(u,6),t(u,11),t(u,25))local H=k(n(u,v),n(o(u),x))local J=(z+G+H+e[A]+j[A])%b;z=x;x=v;v=u;u=(r+J)%b;r=p;p=m;m=l;l=(J+F)%b end;h[1]=(h[1]+l)%b;h[2]=(h[2]+m)%b;h[3]=(h[3]+p)%b;h[4]=(h[4]+r)%b;h[5]=(h[5]+u)%b;h[6]=(h[6]+v)%b;h[7]=(h[7]+x)%b;h[8]=(h[8]+z)%b end;local function Z(f)f=E(f,#f)local g=I{}for h=1,#f,64 do K(f,h,g)end;return w(y(g[1],4)..y(g[2],4)..y(g[3],4)..y(g[4],4)..y(g[5],4)..y(g[6],4)..y(g[7],4)..y(g[8],4))end;local f;local g={["\\"]="\\",["\""]="\"",["\b"]="b",["\f"]="f",["\n"]="n",["\r"]="r",["\t"]="t"}local h={["/"]="/"}for j,l in pairs(g)do h[l]=j end;local j=function(j)return"\\"..(g[j]or string.format("u%04x",j:byte()))end;local l=function(l)return"null"end;local m=function(m,p)local r={}p=p or{}if p[m]then error"circular reference"end;p[m]=true;if rawget(m,1)~=nil or next(m)==nil then local u=0;for v in pairs(m)do if type(v)~="number"then error"invalid table: mixed or invalid key types"end;u=u+1 end;if u~=#m then error"invalid table: sparse array"end;for v,x in ipairs(m)do table.insert(r,f(x,p))end;p[m]=nil;return"["..table.concat(r,",").."]"else for u,v in pairs(m)do if type(u)~="string"then error"invalid table: mixed or invalid key types"end;table.insert(r,f(u,p)..":"..f(v,p))end;p[m]=nil;return"{"..table.concat(r,",").."}"end end;local p=function(p)return'"'..p:gsub('[%z\1-\31\\"]',j)..'"'end;local r=function(r)if r~=r or r<=-math.huge or r>=math.huge then error("unexpected number value '"..tostring(r).."'")end;return string.format("%.14g",r)end;local u={["nil"]=l,table=m,string=p,number=r,boolean=tostring}f=function(v,x)local z=type(v)local A=u[z]if A then return A(v,x)end;error("unexpected type '"..z.."'")end;local v=function(v)return f(v)end;local x;local z=function(...)local z={}for A=1,select("#",...)do z[select(A,...)]=true end;return z end;local A=z(" ","\t","\r","\n")local B=z(" ","\t","\r","\n","]","}",",")local C=z("\\","/",'"',"b","f","n","r","t","u")local F=z("true","false","null")local G={["true"]=true,["false"]=false,null=nil}local H=function(H,J,L,M)for N=J,#H do if L[H:sub(N,N)]~=M then return N end end;return#H+1 end;local J=function(J,L,M)local N=1;local O=1;for P=1,L-1 do O=O+1;if J:sub(P,P)=="\n"then N=N+1;O=1 end end;error(string.format("%s at line %d col %d",M,N,O))end;local L=function(L)local M=math.floor;if L<=0x7f then return string.char(L)elseif L<=0x7ff then return string.char(M(L/64)+192,L%64+128)elseif L<=0xffff then return string.char(M(L/4096)+224,M(L%4096/64)+128,L%64+128)elseif L<=0x10ffff then return string.char(M(L/262144)+240,M(L%262144/4096)+128,M(L%4096/64)+128,L%64+128)end;error(string.format("invalid unicode codepoint '%x'",L))end;local M=function(M)local N=tonumber(M:sub(1,4),16)local O=tonumber(M:sub(7,10),16)if O then return L((N-0xd800)*0x400+O-0xdc00+0x10000)else return L(N)end end;local N=function(N,O)local P=""local Q=O+1;local R=Q;while Q<=#N do local S=N:byte(Q)if S<32 then J(N,Q,"control character in string")elseif S==92 then P=P..N:sub(R,Q-1)Q=Q+1;local T=N:sub(Q,Q)if T=="u"then local U=N:match("^[dD][89aAbB]%x%x\\u%x%x%x%x",Q+1)or N:match("^%x%x%x%x",Q+1)or J(N,Q-1,"invalid unicode escape in string")P=P..M(U)Q=Q+#U else if not C[T]then J(N,Q-1,"invalid escape char '"..T.."' in string")end;P=P..h[T]end;R=Q+1 elseif S==34 then P=P..N:sub(R,Q-1)return P,Q+1 end;Q=Q+1 end;J(N,O,"expected closing quote for string")end;local O=function(O,P)local Q=H(O,P,B)local R=O:sub(P,Q-1)local S=tonumber(R)if not S then J(O,P,"invalid number '"..R.."'")end;return S,Q end;local P=function(P,Q)local R=H(P,Q,B)local S=P:sub(Q,R-1)if not F[S]then J(P,Q,"invalid literal '"..S.."'")end;return G[S],R end;local Q=function(Q,R)local S={}local T=1;R=R+1;while 1 do local U;R=H(Q,R,A,true)if Q:sub(R,R)=="]"then R=R+1;break end;U,R=x(Q,R)S[T]=U;T=T+1;R=H(Q,R,A,true)local V=Q:sub(R,R)R=R+1;if V=="]"then break end;if V~=","then J(Q,R,"expected ']' or ','")end end;return S,R end;local R=function(R,S)local T={}S=S+1;while 1 do local U,V;S=H(R,S,A,true)if R:sub(S,S)=="}"then S=S+1;break end;if R:sub(S,S)~='"'then J(R,S,"expected string for key")end;U,S=x(R,S)S=H(R,S,A,true)if R:sub(S,S)~=":"then J(R,S,"expected ':' after key")end;S=H(R,S+1,A,true)V,S=x(R,S)T[U]=V;S=H(R,S,A,true)local W=R:sub(S,S)S=S+1;if W=="}"then break end;if W~=","then J(R,S,"expected '}' or ','")end end;return T,S end;local S={['"']=N,["0"]=O,["1"]=O,["2"]=O,["3"]=O,["4"]=O,["5"]=O,["6"]=O,["7"]=O,["8"]=O,["9"]=O,["-"]=O,t=P,f=P,n=P,["["]=Q,["{"]=R}x=function(T,U)local V=T:sub(U,U)local W=S[V]if W then return W(T,U)end;J(T,U,"unexpected character '"..V.."'")end;local T=function(T)if type(T)~="string"then error("expected argument of type string, got "..type(T))end;local U,V=x(T,H(T,1,A,true))V=H(T,V,A,true)if V<=#T then J(T,V,"trailing garbage")end;return U end;
 local U,V,W=v,T,Z;
 
 
@@ -2090,7 +2031,7 @@ JunkieProtected.API_KEY=ac
 JunkieProtected.PROVIDER=ad
 JunkieProtected.SERVICE_ID=ab
 
-function ValidateKey(ae)
+local function ValidateKey(ae)
 if not ae or ae==""then
 print"No key provided!"
 
@@ -2122,7 +2063,7 @@ return false,"Invalid key. Get one from:"..ah
 end
 end
 
-function copyLink()
+local function copyLink()
 local ae=JunkieProtected.GetKeyLink()
 
 if setclipboard then
@@ -3091,7 +3032,7 @@ aB=not aB
 end)
 end
 
-function handleSuccess(aA)
+local function handleSuccess(aA)
 al:Close()()
 writefile((ag.Folder or"Temp").."/"..ah..".key",tostring(aA))
 task.wait(0.4)
@@ -3179,16 +3120,16 @@ return aa end function a.p()
 local aa=(cloneref or clonereference or function(aa)return aa end)
 
 
-function map(ab,ac,ad,ae,af)
+local function map(ab,ac,ad,ae,af)
 return(ab-ac)*(af-ae)/(ad-ac)+ae
 end
 
-function viewportPointToWorld(ab,ac)
+local function viewportPointToWorld(ab,ac)
 local ad=aa(game:GetService"Workspace").CurrentCamera:ScreenPointToRay(ab.X,ab.Y)
 return ad.Origin+ad.Direction*ac
 end
 
-function getOffset()
+local function getOffset()
 local ab=aa(game:GetService"Workspace").CurrentCamera.ViewportSize.Y
 return map(ab,0,2560,8,56)
 end
@@ -3208,7 +3149,7 @@ local ad,ae=unpack(a.load'p')
 local af=Instance.new("Folder",aa(game:GetService"Workspace").CurrentCamera)
 
 
-function createAcrylic()
+local function createAcrylic()
 local ag=ac("Part",{
 Name="Body",
 Color=Color3.new(0,0,0),
@@ -3230,7 +3171,7 @@ return ag
 end
 
 
-function createAcrylicBlur(ag)
+local function createAcrylicBlur(ag)
 local ah={}
 
 ag=ag or 0.001
@@ -3242,13 +3183,13 @@ bottomRight=Vector2.new(),
 local aj=createAcrylic()
 aj.Parent=af
 
-function updatePositions(ak,al)
+local function updatePositions(ak,al)
 ai.topLeft=al
 ai.topRight=al+Vector2.new(ak.X,0)
 ai.bottomRight=al+ak
 end
 
-function render()
+local function render()
 local ak=aa(game:GetService"Workspace").CurrentCamera
 if ak then
 ak=ak.CFrame
@@ -3275,7 +3216,7 @@ CFrame.fromMatrix((aq+as)/2,am.XVector,am.YVector,am.ZVector)
 aj.Mesh.Scale=Vector3.new(at,au,0)
 end
 
-function onChange(ak)
+local function onChange(ak)
 local al=ae()
 local am=ak.AbsoluteSize-Vector2.new(al,al)
 local an=ak.AbsolutePosition+Vector2.new(al/2,al/2)
@@ -3284,7 +3225,7 @@ updatePositions(am,an)
 task.spawn(render)
 end
 
-function renderOnChange()
+local function renderOnChange()
 local ak=aa(game:GetService"Workspace").CurrentCamera
 if not ak then
 return
@@ -3499,8 +3440,8 @@ end
 ac.Parent=nil
 end
 
-function registerDefaults()
-function register(ae)
+local function registerDefaults()
+local function register(ae)
 if ae:IsA"DepthOfFieldEffect"then
 ad[ae]={enabled=ae.Enabled}
 end
@@ -4240,7 +4181,7 @@ Parent=al,
 local an=false
 local ao=0
 
-function updateSliderSize()
+local function updateSliderSize()
 local ap=ag
 local aq=ap.AbsoluteCanvasSize.Y
 local ar=ap.AbsoluteWindowSize.Y
@@ -4255,7 +4196,7 @@ al.Size=UDim2.new(1,0,as,0)
 al.Visible=true
 end
 
-function updateScrollingFramePosition()
+local function updateScrollingFramePosition()
 local ap=al.Position.Y.Scale
 local aq=ag.AbsoluteCanvasSize.Y
 local ar=ag.AbsoluteWindowSize.Y
@@ -4274,7 +4215,7 @@ au*as
 )
 end
 
-function updateThumbPosition()
+local function updateThumbPosition()
 if an then return end
 
 local ap=ag.CanvasPosition.Y
@@ -5378,7 +5319,7 @@ end)
 
 ae(game:GetService"UserInputService")
 
-function Color3ToHSB(af)
+local function Color3ToHSB(af)
 local ag,ah,ai=af.R,af.G,af.B
 local aj=math.max(ag,ah,ai)
 local ak=math.min(ag,ah,ai)
@@ -5408,14 +5349,14 @@ b=ao,
 }
 end
 
-function GetPerceivedBrightness(af)
+local function GetPerceivedBrightness(af)
 local ag=af.R
 local ah=af.G
 local ai=af.B
 return 0.299*ag+0.587*ah+0.114*ai
 end
 
-function GetTextColorForHSB(af)
+local function GetTextColorForHSB(af)
 local ag=Color3ToHSB(af)local
 ah, ai, aj=ag.h, ag.s, ag.b
 if GetPerceivedBrightness(af)>0.5 then
@@ -5425,7 +5366,7 @@ return Color3.fromHSV(ah/360,0,0.98)
 end
 end
 
-function getElementPosition(af,ag)
+local function getElementPosition(af,ag)
 if type(ag)~="number"or ag~=math.floor(ag)then
 return nil,1
 end
@@ -5442,7 +5383,7 @@ if ah==0 or ag<1 or ag>ah then
 return nil,2
 end
 
-function isDelimiter(ai)
+local function isDelimiter(ai)
 if ai==nil then
 return true
 end
@@ -5454,7 +5395,7 @@ if isDelimiter(af[ag])then
 return nil,3
 end
 
-function calculate(ai,aj)
+local function calculate(ai,aj)
 if aj==1 then
 return"Squircle"
 end
@@ -5561,7 +5502,7 @@ ao.Size=UDim2.new(0,aj,0,aj)
 am=aj
 end
 
-function CreateText(ap,aq)
+local function CreateText(ap,aq)
 local ar=typeof(ag.Color)=="string"
 and GetTextColorForHSB(Color3.fromHex(aa.Colors[ag.Color]))
 or typeof(ag.Color)=="Color3"and GetTextColorForHSB(ag.Color)
@@ -6127,27 +6068,35 @@ local ai=ab("Frame",{
 Size=UDim2.new(1,0,0,38),
 BackgroundTransparency=1,
 AutomaticSize="Y",
-Parent=ah.UIElements.Container
+Parent=ah.UIElements.Container,
 },{
 ab("UIListLayout",{
 Padding=UDim.new(0,10),
 FillDirection="Vertical",
+}),
 })
-})
-
 
 for aj,ak in next,af.Buttons do
-local al=ad(ak.Title,ak.Icon,ak.Callback,"White",ai,nil,nil,af.Window.NewElements and 999 or 10)
+local al=ad(
+ak.Title,
+ak.Icon,
+ak.Callback,
+ak.Variant or"White",
+ai,
+nil,
+nil,
+af.Window.NewElements and 999 or 10
+)
 al.Size=UDim2.new(1,0,0,38)
 
 end
 end
 
 return ag.__type,ag
-
 end
 
 return ac end function a.D()
+
 local aa=a.load'c'local ab=
 aa.New
 
@@ -6514,6 +6463,7 @@ end
 end)
 end
 
+
 function am.Animate(av,aw,ax)
 if not al.Window.IsToggleDragging then
 al.Window.IsToggleDragging=true
@@ -6523,18 +6473,6 @@ local az=aw.Position.Y
 local aA=aq.Frame.Position.X.Offset
 local aB=false
 local b=false
-local touchData = {}
-local activeTouch = nil
-
-if aw.UserInputType == Enum.UserInputType.Touch then
-activeTouch = aw
-touchData[aw] = {
-startX = ay,
-startY = az,
-hasMoved = false,
-startTime = tick()
-}
-end
 
 ad(aq.Frame.Bar.UIScale,0.28,{Scale=1.5},Enum.EasingStyle.Quint,Enum.EasingDirection.Out):Play()
 ad(aq.Frame.Bar.Highlight.BarOverlay,0.28,{ImageTransparency=.86},Enum.EasingStyle.Quint,Enum.EasingDirection.Out):Play()
@@ -6546,35 +6484,17 @@ if not al.Window.IsToggleDragging then return end
 if d.UserInputType~=Enum.UserInputType.MouseMovement and d.UserInputType~=Enum.UserInputType.Touch then return end
 if aB then return end
 
-local currentData = nil
+local f=math.abs(d.Position.X-ay)
+math.abs(d.Position.Y-az)
 
-if d.UserInputType == Enum.UserInputType.Touch then
-if not touchData[d] then return end
-currentData = touchData[d]
-else
-if not touchData[1] then
-touchData[1] = {
-startX = ay,
-startY = az,
-hasMoved = false,
-startTime = tick()
-}
-end
-currentData = touchData[1]
-end
-
-local f=math.abs(d.Position.X-currentData.startX)
-local g=math.abs(d.Position.Y-currentData.startY)
-
-if not currentData.hasMoved and f>8 then
-currentData.hasMoved=true
+if not b and f>8 then
 b=true
 end
 
-local h=d.Position.X-currentData.startX
-local i=math.max(2,math.min(aA+h,au-at-2))
+local g=d.Position.X-ay
+local h=math.max(2,math.min(aA+g,au-at-2))
 
-local j=math.clamp((i-2)/(au-at-4),0,1)
+local j=math.clamp((h-2)/(au-at-4),0,1)
 
 local l,m,p=am:GetGlassFrame(j)
 aq.Frame.Bar.Highlight.Glass.Image=l
@@ -6582,7 +6502,7 @@ aq.Frame.Bar.Highlight.Glass.ImageRectSize=m
 aq.Frame.Bar.Highlight.Glass.ImageRectOffset=p
 
 ad(aq.Frame,0.12,{
-Position=UDim2.new(0,i,0.5,0)
+Position=UDim2.new(0,h,0.5,0)
 },Enum.EasingStyle.Quint,Enum.EasingDirection.Out):Play()
 end)
 
@@ -6592,23 +6512,6 @@ as=ae.InputEnded:Connect(function(d)
 if not al.Window.IsToggleDragging then return end
 if d.UserInputType~=Enum.UserInputType.MouseButton1 and d.UserInputType~=Enum.UserInputType.Touch then return end
 
-local currentData = nil
-
-if d.UserInputType == Enum.UserInputType.Touch then
-if not touchData[d] then return end
-currentData = touchData[d]
-else
-if not touchData[1] then
-touchData[1] = {
-startX = ay,
-startY = az,
-hasMoved = false,
-startTime = tick()
-}
-end
-currentData = touchData[1]
-end
-
 al.Window.IsToggleDragging=false
 
 if ar then ar:Disconnect()ar=nil end
@@ -6616,9 +6519,7 @@ if as then as:Disconnect()as=nil end
 
 if aB then return end
 
-local elapsedTime = tick() - currentData.startTime
-
-if not currentData.hasMoved and elapsedTime < 0.3 then
+if not b then
 ax:Set(not ax.Value,true,false)
 else
 local f=aq.Frame.Position.X.Offset
@@ -6629,14 +6530,6 @@ end
 
 ad(aq.Frame.Bar.UIScale,0.23,{Scale=1},Enum.EasingStyle.Quint,Enum.EasingDirection.Out):Play()
 ad(aq.Frame.Bar.Highlight.BarOverlay,0.23,{ImageTransparency=0},Enum.EasingStyle.Quint,Enum.EasingDirection.Out):Play()
-
-if d.UserInputType == Enum.UserInputType.Touch then
-touchData[d] = nil
-else
-touchData[1] = nil
-end
-
-b = false
 end)
 end
 end
@@ -6697,8 +6590,15 @@ ThemeTag={
 ImageColor3="CheckboxBorder",
 ImageTransparency="CheckboxBorderTransparency",
 },
-}),
+},{
 
+
+
+
+
+
+
+}),
 
 am,
 },true)
@@ -6829,7 +6729,7 @@ ai:Set(ak,false,ah.Window.NewElements)
 if ah.Window.NewElements and am.Animate then
 if ai.Type=="Toggle"then
 aa.AddSignal(al.ToggleFrame.Hitbox.InputBegan,function(an)
-if not ah.Window.IsToggleDragging and (an.UserInputType==Enum.UserInputType.MouseButton1 or an.UserInputType==Enum.UserInputType.Touch) then
+if not ah.Window.IsToggleDragging and an.UserInputType==Enum.UserInputType.MouseButton1 or an.UserInputType==Enum.UserInputType.Touch then
 am:Animate(an,ai)
 end
 end)
@@ -6854,9 +6754,9 @@ end
 return ai.__type,ai
 end
 
-return af end
- function a.H()
+return af end function a.H()
 local aa=(cloneref or clonereference or function(aa)return aa end)
+
 
 local ac=aa(game:GetService"UserInputService")
 local ad=aa(game:GetService"RunService")
@@ -6865,507 +6765,346 @@ local ae=a.load'c'
 local af=ae.New
 local ag=ae.Tween
 
-local DraggingXPosSlider = {}
-
-function DraggingXPosSlider.GetDistance(pos1, pos2)
-    return math.abs(pos2.X - pos1.X)
-end
-
-function DraggingXPosSlider.IsMouseOverFrame(Frame, Position)
-    local AbsPos, AbsSize = Frame.AbsolutePosition, Frame.AbsoluteSize
-    return Position.X >= AbsPos.X and Position.X <= AbsPos.X + AbsSize.X 
-        and Position.Y >= AbsPos.Y and Position.Y <= AbsPos.Y + AbsSize.Y
-end
-
-function DraggingXPosSlider.MakeDraggable(MainFrame, DragFrame, CallbackTable)
-    if not MainFrame or not DragFrame then return end
-    
-    local dragging = false
-    local dragStart = nil
-    local startPos = nil
-    local dragDistance = 0
-    local DRAG_THRESHOLD =1
-    local originalZIndex = MainFrame.ZIndex
-    local isDraggingStarted = false
-    local currentTouch = nil
-    
-    local UserInputService = game:GetService("UserInputService")
-    
-    function getScreenSize()
-        return workspace.CurrentCamera.ViewportSize
-    end
-    
-    function updatePosition(input)
-        if not dragging or not dragStart then return end
-        
-        local deltaX = input.Position.X - dragStart.X
-        dragDistance = math.abs(deltaX)
-        
-        local screenSize = getScreenSize()
-        
-        local newOffsetX = startPos.X.Offset + deltaX
-        local newScaleX = startPos.X.Scale
-        
-        local newOffsetY = startPos.Y.Offset
-        local newScaleY = startPos.Y.Scale
-        
-        if startPos.X.Scale > 0 then
-            local scaleOffsetX = (screenSize.X * startPos.X.Scale) + startPos.X.Offset
-            local newAbsoluteX = scaleOffsetX + deltaX
-            newScaleX = newAbsoluteX / screenSize.X
-            newOffsetX = 0
-        end
-        
-        MainFrame.Position = UDim2.new(newScaleX, newOffsetX, newScaleY, newOffsetY)
-        
-        if CallbackTable and CallbackTable.OnDragUpdate then
-            CallbackTable.OnDragUpdate(MainFrame.Position, dragDistance)
-        end
-    end
-    
-    function resetDragState()
-        dragging = false
-        dragStart = nil
-        startPos = nil
-        dragDistance = 0
-        isDraggingStarted = false
-        currentTouch = nil
-    end
-    
-    local mouseButton1Connection = nil
-    local touchEndedConnection = nil
-    local movementConnection = nil
-    
-    function onInputEnded()
-        if dragging then
-            local wasDragged = dragDistance > DRAG_THRESHOLD
-            if not wasDragged and CallbackTable and CallbackTable.OnClick then
-                CallbackTable.OnClick()
-            end
-            if wasDragged and isDraggingStarted then
-                MainFrame.ZIndex = originalZIndex
-                if CallbackTable and CallbackTable.OnDragEnd then
-                    CallbackTable.OnDragEnd(MainFrame.Position, wasDragged)
-                end
-            end
-            resetDragState()
-            if mouseButton1Connection then
-                mouseButton1Connection:Disconnect()
-                mouseButton1Connection = nil
-            end
-            if touchEndedConnection then
-                touchEndedConnection:Disconnect()
-                touchEndedConnection = nil
-            end
-            if movementConnection then
-                movementConnection:Disconnect()
-                movementConnection = nil
-            end
-        end
-    end
-    
-    function onInputEndedHandler(endInput)
-        if dragging then
-            if endInput.UserInputType == Enum.UserInputType.MouseButton1 then
-                onInputEnded()
-            elseif endInput.UserInputType == Enum.UserInputType.Touch and endInput == currentTouch then
-                onInputEnded()
-            end
-        end
-    end
-    
-    function onMovement(input)
-        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input == currentTouch) then
-            local currentDeltaX = math.abs(input.Position.X - dragStart.X)
-            if not isDraggingStarted and currentDeltaX > DRAG_THRESHOLD then
-                isDraggingStarted = true
-                MainFrame.ZIndex = 110
-                if CallbackTable and CallbackTable.OnDragStart then
-                    CallbackTable.OnDragStart()
-                end
-            end
-            updatePosition(input)
-        end
-    end
-    
-    function onInputBegan(input)
-        if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) 
-            and input.UserInputState == Enum.UserInputState.Begin and not dragging then
-            if DraggingXPosSlider.IsMouseOverFrame(DragFrame, input.Position) then
-                dragging = true
-                dragStart = input.Position
-                startPos = MainFrame.Position
-                dragDistance = 0
-                isDraggingStarted = false
-                if input.UserInputType == Enum.UserInputType.Touch then
-                    currentTouch = input
-                else
-                    currentTouch = nil
-                end
-                
-                mouseButton1Connection = UserInputService.InputEnded:Connect(function(endInput)
-                    if endInput.UserInputType == Enum.UserInputType.MouseButton1 then
-                        onInputEndedHandler(endInput)
-                    end
-                end)
-                touchEndedConnection = UserInputService.InputEnded:Connect(function(endInput)
-                    if endInput.UserInputType == Enum.UserInputType.Touch then
-                        onInputEndedHandler(endInput)
-                    end
-                end)
-                movementConnection = UserInputService.InputChanged:Connect(function(moveInput)
-                    if moveInput.UserInputType == Enum.UserInputType.MouseMovement or (moveInput.UserInputType == Enum.UserInputType.Touch and moveInput == currentTouch) then
-                        onMovement(moveInput)
-                    end
-                end)
-            end
-        end
-    end
-    
-    local inputBeganConnection = DragFrame.InputBegan:Connect(onInputBegan)
-
-    local cleanupFunction = function()
-        inputBeganConnection:Disconnect()
-        if mouseButton1Connection then mouseButton1Connection:Disconnect() end
-        if touchEndedConnection then touchEndedConnection:Disconnect() end
-        if movementConnection then movementConnection:Disconnect() end
-        if isDraggingStarted then
-            MainFrame.ZIndex = originalZIndex
-        end
-    end
-    
-    return cleanupFunction
-end
 
 local ah={}
+
 local ai=false
 
 function ah.New(aj,ak)
-    local al={
-        __type="Slider",
-        Title=ak.Title or nil,
-        Desc=ak.Desc or nil,
-        Locked=ak.Locked or nil,
-        LockedTitle=ak.LockedTitle,
-        Value=ak.Value or{},
-        Icons=ak.Icons or nil,
-        IsTooltip=ak.IsTooltip or false,
-        IsTextbox=ak.IsTextbox,
-        Step=ak.Step or 1,
-        Callback=ak.Callback or function()end,
-        UIElements={},
-        IsFocusing=false,
+local al={
+__type="Slider",
+Title=ak.Title or nil,
+Desc=ak.Desc or nil,
+Locked=ak.Locked or nil,
+LockedTitle=ak.LockedTitle,
+Value=ak.Value or{},
+Icons=ak.Icons or nil,
+IsTooltip=ak.IsTooltip or false,
+IsTextbox=ak.IsTextbox,
+Step=ak.Step or 1,
+Callback=ak.Callback or function()end,
+UIElements={},
+IsFocusing=false,
 
-        Width=ak.Width or 130,
-        TextBoxWidth=ak.Window.NewElements and 40 or 30,
-        ThumbSize=13,
-        IconSize=26,
-    }
-    
-    if al.Icons=={}then
-        al.Icons={
-            From="sfsymbols:sunMinFill",
-            To="sfsymbols:sunMaxFill",
-        }
-    end
-    if al.IsTextbox==nil and al.Title==nil then al.IsTextbox=false else al.IsTextbox=al.IsTextbox~=false end
+Width=ak.Width or 130,
+TextBoxWidth=ak.Window.NewElements and 40 or 30,
+ThumbSize=13,
+IconSize=26,
+}
+if al.Icons=={}then
+al.Icons={
+From="sfsymbols:sunMinFill",
+To="sfsymbols:sunMaxFill",
+}
+end
+if al.IsTextbox==nil and al.Title==nil then al.IsTextbox=false else al.IsTextbox=al.IsTextbox~=false end
 
-    local am
-    local an
-    local ao
-    local ap=al.Value.Default or al.Value.Min or 0
+local am
+local an
+local ao
+local ap=al.Value.Default or al.Value.Min or 0
 
-    local aq=ap
-    local ar=(ap-(al.Value.Min or 0))/((al.Value.Max or 100)-(al.Value.Min or 0))
+local aq=ap
+local ar=(ap-(al.Value.Min or 0))/((al.Value.Max or 100)-(al.Value.Min or 0))
 
-    local as=true
-    local at=al.Step%1~=0
+local as=true
+local at=al.Step%1~=0
 
-    function FormatValue(au)
-        if at then
-            return tonumber(string.format("%.2f",au))
-        end
-        return math.floor(au+0.5)
-    end
+local function FormatValue(au)
+if at then
+return tonumber(string.format("%.2f",au))
+end
+return math.floor(au+0.5)
+end
 
-    function CalculateValue(au)
-        if at then
-            return math.floor(au/al.Step+0.5)*al.Step
-        else
-            return math.floor(au/al.Step+0.5)*al.Step
-        end
-    end
+local function CalculateValue(au)
+if at then
+return math.floor(au/al.Step+0.5)*al.Step
+else
+return math.floor(au/al.Step+0.5)*al.Step
+end
+end
 
-    local au,av
-    local aw=32
-    if al.Icons then
-        if al.Icons.From then
-            au=ae.Image(
-                al.Icons.From,
-                al.Icons.From,
-                0,
-                ak.Window.Folder,
-                "SliderIconFrom",
-                true,
-                true,
-                "SliderIconFrom"
-            )
-            au.Size=UDim2.new(0,al.IconSize,0,al.IconSize)
-            aw=aw+al.IconSize-2
-        end
-        if al.Icons.To then
-            av=ae.Image(
-                al.Icons.To,
-                al.Icons.To,
-                0,
-                ak.Window.Folder,
-                "SliderIconTo",
-                true,
-                true,
-                "SliderIconTo"
-            )
-            av.Size=UDim2.new(0,al.IconSize,0,al.IconSize)
-            aw=aw+al.IconSize-2
-        end
-    end
-    
-    al.SliderFrame=a.load'B'{
-        Title=al.Title,
-        Desc=al.Desc,
-        Parent=ak.Parent,
-        TextOffset=al.Width,
-        Hover=false,
-        Tab=ak.Tab,
-        Index=ak.Index,
-        Window=ak.Window,
-        ElementTable=al,
-        ParentConfig=ak,
-    }
+local au,av
+local aw=32
+if al.Icons then
+if al.Icons.From then
+au=ae.Image(
+al.Icons.From,
+al.Icons.From,
+0,
+ak.Window.Folder,
+"SliderIconFrom",
+true,
+true,
+"SliderIconFrom"
+)
+au.Size=UDim2.new(0,al.IconSize,0,al.IconSize)
+aw=aw+al.IconSize-2
+end
+if al.Icons.To then
+av=ae.Image(
+al.Icons.To,
+al.Icons.To,
+0,
+ak.Window.Folder,
+"SliderIconTo",
+true,
+true,
+"SliderIconTo"
+)
+av.Size=UDim2.new(0,al.IconSize,0,al.IconSize)
+aw=aw+al.IconSize-2
+end
+end
+al.SliderFrame=a.load'B'{
+Title=al.Title,
+Desc=al.Desc,
+Parent=ak.Parent,
+TextOffset=al.Width,
+Hover=false,
+Tab=ak.Tab,
+Index=ak.Index,
+Window=ak.Window,
+ElementTable=al,
+ParentConfig=ak,
+}
 
-    al.UIElements.SliderIcon=ae.NewRoundFrame(99,"Squircle",{
-        ImageTransparency=.95,
-        Size=UDim2.new(1,not al.IsTextbox and-aw or(-al.TextBoxWidth-8),0,4),
-        AnchorPoint=Vector2.new(0.5,0.5),
-        Position=UDim2.new(0.5,0,0.5,0),
-        Name="Frame",
-        ThemeTag={
-            ImageColor3="Text",
-        },
-    },{
-        ae.NewRoundFrame(99,"Squircle",{
-            Name="Frame",
-            Size=UDim2.new(ar,0,1,0),
-            ImageTransparency=.1,
-            ThemeTag={
-                ImageColor3="Slider",
-            },
-        },{
-            ae.NewRoundFrame(99,"Squircle",{
-                Size=UDim2.new(0,ak.Window.NewElements and(al.ThumbSize*2)or(al.ThumbSize+2),0,ak.Window.NewElements and(al.ThumbSize+4)or(al.ThumbSize+2)),
-                Position=UDim2.new(1,0,0.5,0),
-                AnchorPoint=Vector2.new(0.5,0.5),
-                ThemeTag={
-                    ImageColor3="SliderThumb",
-                },
-                Name="Thumb",
-            },{
-                ae.NewRoundFrame(99,"Glass-1",{
-                    Size=UDim2.new(1,0,1,0),
-                    ImageColor3=Color3.new(1,1,1),
-                    Name="Highlight",
-                    ImageTransparency=.6,
-                }),
-            })
-        })
-    })
 
-    al.UIElements.SliderContainer=af("Frame",{
-        Size=UDim2.new(al.Title==nil and 1 or 0,al.Title==nil and 0 or al.Width,0,0),
-        AutomaticSize="Y",
-        Position=UDim2.new(1,al.IsTextbox and(ak.Window.NewElements and-16 or 0)or 0,0.5,0),
-        AnchorPoint=Vector2.new(1,0.5),
-        BackgroundTransparency=1,
-        Parent=al.SliderFrame.UIElements.Main,
-    },{
-        af("UIListLayout",{
-            Padding=UDim.new(0,al.Title~=nil and 8 or 12),
-            FillDirection="Horizontal",
-            VerticalAlignment="Center",
-            HorizontalAlignment=al.Icons and(al.Icons.From and(al.Icons.To and"Center"or"Left")or al.Icons.To and"Right")or"Center",
-        }),
-        au,
-        al.UIElements.SliderIcon,
-        av,
-        af("TextBox",{
-            Size=UDim2.new(0,al.TextBoxWidth,0,0),
-            TextXAlignment="Left",
-            Text=FormatValue(ap),
-            ThemeTag={
-                TextColor3="Text"
-            },
-            TextTransparency=.4,
-            AutomaticSize="Y",
-            TextSize=15,
-            FontFace=Font.new(ae.Font,Enum.FontWeight.Medium),
-            BackgroundTransparency=1,
-            LayoutOrder=-1,
-            Visible=al.IsTextbox,
-        })
-    })
+al.UIElements.SliderIcon=ae.NewRoundFrame(99,"Squircle",{
+ImageTransparency=.95,
+Size=UDim2.new(1,not al.IsTextbox and-aw or(-al.TextBoxWidth-8),0,4),
+AnchorPoint=Vector2.new(0.5,0.5),
+Position=UDim2.new(0.5,0,0.5,0),
+Name="Frame",
+ThemeTag={
+ImageColor3="Text",
+},
+},{
+ae.NewRoundFrame(99,"Squircle",{
+Name="Frame",
+Size=UDim2.new(ar,0,1,0),
+ImageTransparency=.1,
+ThemeTag={
+ImageColor3="Slider",
+},
+},{
+ae.NewRoundFrame(99,"Squircle",{
+Size=UDim2.new(0,ak.Window.NewElements and(al.ThumbSize*2)or(al.ThumbSize+2),0,ak.Window.NewElements and(al.ThumbSize+4)or(al.ThumbSize+2)),
+Position=UDim2.new(1,0,0.5,0),
+AnchorPoint=Vector2.new(0.5,0.5),
+ThemeTag={
+ImageColor3="SliderThumb",
+},
+Name="Thumb",
+},{
+ae.NewRoundFrame(99,"Glass-1",{
+Size=UDim2.new(1,0,1,0),
+ImageColor3=Color3.new(1,1,1),
+Name="Highlight",
+ImageTransparency=.6,
+},{
 
-    local ax
-    if al.IsTooltip then
-        ax=a.load'A'.New(ap,al.UIElements.SliderIcon.Frame.Thumb,true,"Secondary","Small",false)
-        ax.Container.AnchorPoint=Vector2.new(0.5,1)
-        ax.Container.Position=UDim2.new(0.5,0,0,-8)
-    end
 
-    function al.Lock(ay)
-        al.Locked=true
-        as=false
-        return al.SliderFrame:Lock(al.LockedTitle)
-    end
-    function al.Unlock(ay)
-        al.Locked=false
-        as=true
-        return al.SliderFrame:Unlock()
-    end
 
-    if al.Locked then
-        al:Lock()
-    end
 
-    local ay=ak.Tab.UIElements.ContainerFrame
 
-    local dragCallbacks = {
-        OnDragStart = function()
-            if ak.Window.NewElements then
-                ag(al.UIElements.SliderIcon.Frame.Thumb, 0.24, {
-                    ImageTransparency = 0.85,
-                    Size = UDim2.new(0, (ak.Window.NewElements and (al.ThumbSize * 2) or (al.ThumbSize)) + 8, 0, al.ThumbSize + 8)
-                }, Enum.EasingStyle.Quint, Enum.EasingDirection.Out):Play()
-            end
-            if ax then ax:Open() end
-            ay.ScrollingEnabled = false
-            ai = true
-        end,
-        OnDragUpdate = function(position, dragDistance)
-            local currentX = ac:GetMouseLocation().X
-            local d = math.clamp((currentX - al.UIElements.SliderIcon.AbsolutePosition.X) / al.UIElements.SliderIcon.AbsoluteSize.X, 0, 1)
-            local aA = CalculateValue(al.Value.Min + d * (al.Value.Max - al.Value.Min))
-            aA = math.clamp(aA, al.Value.Min or 0, al.Value.Max or 100)
 
-            if aA ~= aq then
-                ag(al.UIElements.SliderIcon.Frame, 0.05, { Size = UDim2.new(d, 0, 1, 0) }):Play()
-                al.UIElements.SliderContainer.TextBox.Text = FormatValue(aA)
-                if ax then ax.TitleFrame.Text = FormatValue(aA) end
-                al.Value.Default = FormatValue(aA)
-                aq = aA
-                ae.SafeCallback(al.Callback, FormatValue(aA))
-            end
-        end,
-        OnDragEnd = function(position, wasDragged)
-            if wasDragged then
-                if ak.Window.NewElements then
-                    ag(al.UIElements.SliderIcon.Frame.Thumb, 0.2, {
-                        ImageTransparency = 0,
-                        Size = UDim2.new(0, ak.Window.NewElements and (al.ThumbSize * 2) or (al.ThumbSize + 2), 0, ak.Window.NewElements and (al.ThumbSize + 4) or (al.ThumbSize + 2))
-                    }, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut):Play()
-                end
-            end
-            ai = false
-            ay.ScrollingEnabled = true
-            if ax then ax:Close(false) end
-        end,
-    }
-    local dragCleanup = DraggingXPosSlider.MakeDraggable(
-        al.UIElements.SliderIcon,
-        al.UIElements.SliderIcon.Frame.Thumb,
-        dragCallbacks
-    )
 
-    function al.Set(az, aA, aB)
-        if as then
-            if not al.IsFocusing and not ai and (not aB or (aB.UserInputType == Enum.UserInputType.MouseButton1 or aB.UserInputType == Enum.UserInputType.Touch)) then
-                if aB then
-                    local d = math.clamp((aB.Position.X - al.UIElements.SliderIcon.AbsolutePosition.X) / al.UIElements.SliderIcon.AbsoluteSize.X, 0, 1)
-                    aA = CalculateValue(al.Value.Min + d * (al.Value.Max - al.Value.Min))
-                    aA = math.clamp(aA, al.Value.Min or 0, al.Value.Max or 100)
 
-                    if aA ~= aq then
-                        ag(al.UIElements.SliderIcon.Frame, 0.05, { Size = UDim2.new(d, 0, 1, 0) }):Play()
-                        al.UIElements.SliderContainer.TextBox.Text = FormatValue(aA)
-                        if ax then ax.TitleFrame.Text = FormatValue(aA) end
-                        al.Value.Default = FormatValue(aA)
-                        aq = aA
-                        ae.SafeCallback(al.Callback, FormatValue(aA))
-                    end
-                else
-                    aA = math.clamp(aA, al.Value.Min or 0, al.Value.Max or 100)
-                    local d = math.clamp((aA - (al.Value.Min or 0)) / ((al.Value.Max or 100) - (al.Value.Min or 0)), 0, 1)
-                    aA = CalculateValue(al.Value.Min + d * (al.Value.Max - al.Value.Min))
 
-                    if aA ~= aq then
-                        ag(al.UIElements.SliderIcon.Frame, 0.05, { Size = UDim2.new(d, 0, 1, 0) }):Play()
-                        al.UIElements.SliderContainer.TextBox.Text = FormatValue(aA)
-                        if ax then ax.TitleFrame.Text = FormatValue(aA) end
-                        al.Value.Default = FormatValue(aA)
-                        aq = aA
-                        ae.SafeCallback(al.Callback, FormatValue(aA))
-                    end
-                end
-            end
-        end
-    end
 
-    function al.SetMax(az, aA)
-        al.Value.Max = aA
 
-        local aB = tonumber(al.Value.Default) or aq
-        if aB > aA then
-            al:Set(aA)
-        else
-            local d = math.clamp((aB - (al.Value.Min or 0)) / (aA - (al.Value.Min or 0)), 0, 1)
-            ag(al.UIElements.SliderIcon.Frame, 0.1, { Size = UDim2.new(d, 0, 1, 0) }):Play()
-        end
-    end
 
-    function al.SetMin(az, aA)
-        al.Value.Min = aA
 
-        local aB = tonumber(al.Value.Default) or aq
-        if aB < aA then
-            al:Set(aA)
-        else
-            local d = math.clamp((aB - aA) / ((al.Value.Max or 100) - aA), 0, 1)
-            ag(al.UIElements.SliderIcon.Frame, 0.1, { Size = UDim2.new(d, 0, 1, 0) }):Play()
-        end
-    end
+}),
+})
+})
+})
 
-    ae.AddSignal(al.UIElements.SliderContainer.TextBox.FocusLost, function(az)
-        if az then
-            local aA = tonumber(al.UIElements.SliderContainer.TextBox.Text)
-            if aA then
-                al:Set(aA)
-            else
-                al.UIElements.SliderContainer.TextBox.Text = FormatValue(aq)
-                if ax then ax.TitleFrame.Text = FormatValue(aq) end
-            end
-        end
-    end)
+al.UIElements.SliderContainer=af("Frame",{
+Size=UDim2.new(al.Title==nil and 1 or 0,al.Title==nil and 0 or al.Width,0,0),
+AutomaticSize="Y",
+Position=UDim2.new(1,al.IsTextbox and(ak.Window.NewElements and-16 or 0)or 0,0.5,0),
+AnchorPoint=Vector2.new(1,0.5),
+BackgroundTransparency=1,
+Parent=al.SliderFrame.UIElements.Main,
+},{
+af("UIListLayout",{
+Padding=UDim.new(0,al.Title~=nil and 8 or 12),
+FillDirection="Horizontal",
+VerticalAlignment="Center",
+HorizontalAlignment=al.Icons and(al.Icons.From and(al.Icons.To and"Center"or"Left")or al.Icons.To and"Right")or"Center",
+}),
+au,
+al.UIElements.SliderIcon,
+av,
+af("TextBox",{
+Size=UDim2.new(0,al.TextBoxWidth,0,0),
+TextXAlignment="Left",
+Text=FormatValue(ap),
+ThemeTag={
+TextColor3="Text"
+},
+TextTransparency=.4,
+AutomaticSize="Y",
+TextSize=15,
+FontFace=Font.new(ae.Font,Enum.FontWeight.Medium),
+BackgroundTransparency=1,
+LayoutOrder=-1,
+Visible=al.IsTextbox,
+})
+})
 
-    -- Cleanup function for when slider is destroyed
-    local originalDestroy = al.Destroy
-    function al.Destroy(...)
-        if dragCleanup then
-            dragCleanup()
-        end
-        if originalDestroy then
-            return originalDestroy(...)
-        end
-    end
+local ax
+if al.IsTooltip then
+ax=a.load'A'.New(ap,al.UIElements.SliderIcon.Frame.Thumb,true,"Secondary","Small",false)
+ax.Container.AnchorPoint=Vector2.new(0.5,1)
+ax.Container.Position=UDim2.new(0.5,0,0,-8)
+end
 
-    return al.__type, al
+function al.Lock(ay)
+al.Locked=true
+as=false
+return al.SliderFrame:Lock(al.LockedTitle)
+end
+function al.Unlock(ay)
+al.Locked=false
+as=true
+return al.SliderFrame:Unlock()
+end
+
+if al.Locked then
+al:Lock()
+end
+
+
+local ay=ak.Tab.UIElements.ContainerFrame
+
+function al.Set(az,aA,aB)
+if as then
+if not al.IsFocusing and not ai and(not aB or(aB.UserInputType==Enum.UserInputType.MouseButton1 or aB.UserInputType==Enum.UserInputType.Touch))then
+if aB then
+am=(aB.UserInputType==Enum.UserInputType.Touch)
+ay.ScrollingEnabled=false
+ai=true
+
+local b=am and aB.Position.X or ac:GetMouseLocation().X
+local d=math.clamp((b-al.UIElements.SliderIcon.AbsolutePosition.X)/al.UIElements.SliderIcon.AbsoluteSize.X,0,1)
+aA=CalculateValue(al.Value.Min+d*(al.Value.Max-al.Value.Min))
+aA=math.clamp(aA,al.Value.Min or 0,al.Value.Max or 100)
+
+if aA~=aq then
+ag(al.UIElements.SliderIcon.Frame,0.05,{Size=UDim2.new(d,0,1,0)}):Play()
+al.UIElements.SliderContainer.TextBox.Text=FormatValue(aA)
+if ax then ax.TitleFrame.Text=FormatValue(aA)end
+al.Value.Default=FormatValue(aA)
+aq=aA
+ae.SafeCallback(al.Callback,FormatValue(aA))
+end
+
+an=ad.RenderStepped:Connect(function()
+local f=am and aB.Position.X or ac:GetMouseLocation().X
+local g=math.clamp((f-al.UIElements.SliderIcon.AbsolutePosition.X)/al.UIElements.SliderIcon.AbsoluteSize.X,0,1)
+aA=CalculateValue(al.Value.Min+g*(al.Value.Max-al.Value.Min))
+
+if aA~=aq then
+ag(al.UIElements.SliderIcon.Frame,0.05,{Size=UDim2.new(g,0,1,0)}):Play()
+al.UIElements.SliderContainer.TextBox.Text=FormatValue(aA)
+if ax then ax.TitleFrame.Text=FormatValue(aA)end
+al.Value.Default=FormatValue(aA)
+aq=aA
+ae.SafeCallback(al.Callback,FormatValue(aA))
+end
+end)
+
+
+ao=ac.InputEnded:Connect(function(f)
+if(f.UserInputType==Enum.UserInputType.MouseButton1 or f.UserInputType==Enum.UserInputType.Touch)and aB==f then
+an:Disconnect()
+ao:Disconnect()
+ai=false
+ay.ScrollingEnabled=true
+
+if ak.Window.NewElements then
+ag(al.UIElements.SliderIcon.Frame.Thumb,.2,{ImageTransparency=0,Size=UDim2.new(0,ak.Window.NewElements and(al.ThumbSize*2)or(al.ThumbSize+2),0,ak.Window.NewElements and(al.ThumbSize+4)or(al.ThumbSize+2))},Enum.EasingStyle.Quint,Enum.EasingDirection.InOut):Play()
+end
+if ax then ax:Close(false)end
+end
+end)
+else
+aA=math.clamp(aA,al.Value.Min or 0,al.Value.Max or 100)
+
+local b=math.clamp((aA-(al.Value.Min or 0))/((al.Value.Max or 100)-(al.Value.Min or 0)),0,1)
+aA=CalculateValue(al.Value.Min+b*(al.Value.Max-al.Value.Min))
+
+if aA~=aq then
+ag(al.UIElements.SliderIcon.Frame,0.05,{Size=UDim2.new(b,0,1,0)}):Play()
+al.UIElements.SliderContainer.TextBox.Text=FormatValue(aA)
+if ax then ax.TitleFrame.Text=FormatValue(aA)end
+al.Value.Default=FormatValue(aA)
+aq=aA
+ae.SafeCallback(al.Callback,FormatValue(aA))
+end
+end
+end
+end
+end
+
+function al.SetMax(az,aA)
+al.Value.Max=aA
+
+local aB=tonumber(al.Value.Default)or aq
+if aB>aA then
+al:Set(aA)
+else
+local b=math.clamp((aB-(al.Value.Min or 0))/(aA-(al.Value.Min or 0)),0,1)
+ag(al.UIElements.SliderIcon.Frame,0.1,{Size=UDim2.new(b,0,1,0)}):Play()
+end
+end
+
+function al.SetMin(az,aA)
+al.Value.Min=aA
+
+local aB=tonumber(al.Value.Default)or aq
+if aB<aA then
+al:Set(aA)
+else
+local b=math.clamp((aB-aA)/((al.Value.Max or 100)-aA),0,1)
+ag(al.UIElements.SliderIcon.Frame,0.1,{Size=UDim2.new(b,0,1,0)}):Play()
+end
+end
+
+ae.AddSignal(al.UIElements.SliderContainer.TextBox.FocusLost,function(az)
+if az then
+local aA=tonumber(al.UIElements.SliderContainer.TextBox.Text)
+if aA then
+al:Set(aA)
+else
+al.UIElements.SliderContainer.TextBox.Text=FormatValue(aq)
+if ax then ax.TitleFrame.Text=FormatValue(aq)end
+end
+end
+end)
+
+ae.AddSignal(al.UIElements.SliderContainer.InputBegan,function(az)
+if al.Locked or ai then
+return
+end
+
+al:Set(ap,az)
+
+if az.UserInputType==Enum.UserInputType.MouseButton1 or az.UserInputType==Enum.UserInputType.Touch then
+
+if ak.Window.NewElements then
+ag(al.UIElements.SliderIcon.Frame.Thumb,.24,{ImageTransparency=.85,Size=UDim2.new(0,(ak.Window.NewElements and(al.ThumbSize*2)or(al.ThumbSize))+8,0,al.ThumbSize+8)},Enum.EasingStyle.Quint,Enum.EasingDirection.Out):Play()
+end
+if ax then ax:Open()end
+
+end
+end)
+
+return al.__type,al
 end
 
 return ah end function a.I()
@@ -7385,7 +7124,7 @@ UIPadding=8,
 local ah=a.load'v'.New
 
 function ag.New(ai,aj)
-function NormalizeKeyCode(ak)
+local function NormalizeKeyCode(ak)
 if typeof(ak)=="EnumItem"then
 return ak.Name
 elseif type(ak)=="string"then
@@ -7759,12 +7498,12 @@ MaxSize=Vector2.new(300,400),
 }),
 })
 
-function RecalculateCanvasSize()
+local function RecalculateCanvasSize()
 an.UIElements.Menu.Frame.ScrollingFrame.CanvasSize=
 UDim2.fromOffset(0,an.UIElements.UIListLayout.AbsoluteContentSize.Y)
 end
 
-function RecalculateListSize()
+local function RecalculateListSize()
 local as=ah.ViewportSize.Y*0.6
 
 local at=an.UIElements.UIListLayout.AbsoluteContentSize.Y
@@ -7830,7 +7569,9 @@ if#av>0 then
 av=av:sub(1,#av-2)
 end
 else
-av=typeof(an.Value)=="table"and(an.Value.Title or an.Value[1])or an.Value or""
+av=typeof(an.Value)=="table"and(an.Value.Title or an.Value[1])
+or an.Value
+or""
 end
 
 if an.UIElements.Dropdown then
@@ -7838,7 +7579,7 @@ an.UIElements.Dropdown.Frame.Frame.TextLabel.Text=(av==""and"--"or av)
 end
 end
 
-function Callback(at)
+local function Callback(at)
 ar:Display()
 if an.Callback then
 task.spawn(function()
@@ -7911,6 +7652,10 @@ end
 end
 
 function ar.Refresh(at,au)
+if am.Window.Destroyed then
+return
+end
+
 for av,aw in next,an.UIElements.Menu.Frame.ScrollingFrame:GetChildren()do
 if not aw:IsA"UIListLayout"then
 aw:Destroy()
@@ -8493,7 +8238,7 @@ self_call=Color3.fromHex"#89B4FA",
 local_property=Color3.fromHex"#CBA6F7",
 }
 
-function createKeywordSet(ah)
+local function createKeywordSet(ah)
 local aj={}
 for ak,al in ipairs(ah)do
 aj[al]=true
@@ -8505,7 +8250,7 @@ local ah=createKeywordSet(ae.lua)
 local aj=createKeywordSet(ae.rbx)
 local ak=createKeywordSet(ae.operators)
 
-function getHighlight(al,am)
+local function getHighlight(al,am)
 local an=al[am]
 
 if af[an.."_color"]then
@@ -8936,6 +8681,7 @@ Default=at.Value or at.Default,
 Callback=at.Callback,
 Transparency=at.Transparency,
 UIElements=at.UIElements,
+
 TextPadding=10,
 }
 
@@ -8954,6 +8700,8 @@ local az=ay.Create(nil,"Dialog",au,av,au.UIElements.Main.Main)
 ax.ColorpickerFrame=az
 
 az.UIElements.Main.Size=UDim2.new(1,0,0,0)
+
+
 
 local aA,aB,b=ax.Hue,ax.Sat,ax.Vib
 
@@ -8977,6 +8725,10 @@ PaddingRight=UDim.new(0,ax.TextPadding/2),
 PaddingBottom=UDim.new(0,ax.TextPadding/2),
 })
 })
+
+
+
+
 
 local d=ae("Frame",{
 Size=UDim2.new(0,14,0,14),
@@ -9030,6 +8782,7 @@ NumberSequenceKeypoint.new(1.0,0.1),
 }
 })
 }),
+
 d,
 })
 
@@ -9045,6 +8798,10 @@ Padding=UDim.new(0,4),
 FillDirection="Vertical",
 })
 })
+
+
+
+
 
 local f=ae("Frame",{
 BackgroundColor3=ax.Default,
@@ -9091,6 +8848,13 @@ NumberSequenceKeypoint.new(1.0,0.1),
 }
 })
 }),
+
+
+
+
+
+
+
 f,
 })
 
@@ -9118,6 +8882,13 @@ Parent=az.UIElements.Main,
 ae("UICorner",{
 CornerRadius=UDim.new(0,8),
 }),
+
+
+
+
+
+
+
 aa.NewRoundFrame(8,"SquircleOutline",{
 ThemeTag={
 ImageColor3="Outline",
@@ -9165,6 +8936,8 @@ Size=UDim2.new(0,14,0,14),
 AnchorPoint=Vector2.new(0.5,0.5),
 Position=UDim2.new(0.5,0,0,0),
 Parent=l,
+
+
 BackgroundColor3=ax.Default
 },{
 ae("UIStroke",{
@@ -9190,6 +8963,7 @@ CornerRadius=UDim.new(1,0),
 j,
 l,
 })
+
 
 function CreateNewInput(r,u)
 local v=aq(r,nil,ax.UIElements.Inputs)
@@ -9220,7 +8994,7 @@ v.Size=UDim2.new(0,150,0,42)
 return v
 end
 
-function ToRGB(r)
+local function ToRGB(r)
 return{
 R=math.floor(r.R*255),
 G=math.floor(r.G*255),
@@ -9251,6 +9025,12 @@ Padding=UDim.new(0,6),
 FillDirection="Horizontal",
 HorizontalAlignment="Right",
 }),
+
+
+
+
+
+
 })
 
 local B={
@@ -9273,6 +9053,8 @@ G.Size=UDim2.new(0.5,-3,0,40)
 G.AutomaticSize="None"
 end
 
+
+
 local C,F,G
 if ax.Transparency then
 local H=ae("Frame",{
@@ -9289,6 +9071,7 @@ ThemeTag={
 BackgroundColor3="Text",
 },
 Parent=H,
+
 },{
 ae("UIStroke",{
 Thickness=2,
@@ -9300,6 +9083,7 @@ Color="Text",
 ae("UICorner",{
 CornerRadius=UDim.new(1,0),
 })
+
 })
 
 G=ae("Frame",{
@@ -9351,6 +9135,7 @@ J=tostring(J)
 return J:find"%."and tonumber(J:sub(1,J:find"%."+L))or J
 end
 
+
 function ax.Update(H,J,L)
 if J then aA,aB,b=Color3.toHSV(J)else aA,aB,b=ax.Hue,ax.Sat,ax.Vib end
 
@@ -9378,12 +9163,17 @@ end
 
 ax:Update(ax.Default,ax.Transparency)
 
-function GetRGB()
+
+
+
+local function GetRGB()
 local H=Color3.fromHSV(ax.Hue,ax.Sat,ax.Vib)
 return{R=math.floor(H.r*255),G=math.floor(H.g*255),B=math.floor(H.b*255)}
 end
 
-function clamp(H,J,L)
+
+
+local function clamp(H,J,L)
 return math.clamp(tonumber(H)or 0,J,L)
 end
 
@@ -9399,7 +9189,7 @@ end
 end
 end)
 
-function updateColorFromInput(H,J)
+local function updateColorFromInput(H,J)
 aa.AddSignal(H.Frame.Frame.TextBox.FocusLost,function(L)
 if L then
 local M=H.Frame.Frame.TextBox
@@ -9432,180 +9222,56 @@ end
 end)
 end
 
-local UserInputService = game:GetService("UserInputService")
 
-local function IsPointInFrame(Frame, Point)
-local AbsPos=Frame.AbsolutePosition
-local AbsSize=Frame.AbsoluteSize
-return Point.X>=AbsPos.X and Point.X<=AbsPos.X+AbsSize.X and Point.Y>=AbsPos.Y and Point.Y<=AbsPos.Y+AbsSize.Y
-end
 
-local function ClampToFrame(Frame, Point)
-local AbsPos=Frame.AbsolutePosition
-local AbsSize=Frame.AbsoluteSize
-return Vector2.new(
-math.clamp(Point.X,AbsPos.X,AbsPos.X+AbsSize.X),
-math.clamp(Point.Y,AbsPos.Y,AbsPos.Y+AbsSize.Y)
-)
-end
-
-local function updateSatVibFromPosition(Position)
 local H=ax.UIElements.SatVibMap
-local AbsPos=H.AbsolutePosition
-local AbsSize=H.AbsoluteSize
-local clampedPos=ClampToFrame(H,Position)
-local L=AbsPos.X
-local M=L+AbsSize.X
-local N=clampedPos.X
-local O=AbsPos.Y
-local P=O+AbsSize.Y
-local Q=clampedPos.Y
+aa.AddSignal(H.InputBegan,function(J)
+if J.UserInputType==Enum.UserInputType.MouseButton1 or J.UserInputType==Enum.UserInputType.Touch then
+while aj:IsMouseButtonPressed(Enum.UserInputType.MouseButton1)do
+local L=H.AbsolutePosition.X
+local M=L+H.AbsoluteSize.X
+local N=math.clamp(ao.X,L,M)
+
+local O=H.AbsolutePosition.Y
+local P=O+H.AbsoluteSize.Y
+local Q=math.clamp(ao.Y,O,P)
+
 ax.Sat=(N-L)/(M-L)
 ax.Vib=1-((Q-O)/(P-O))
 ax:Update()
-end
 
-local satVibActiveTouch=nil
-local satVibDragging=false
-local satVibInputChangedConn=nil
-local satVibInputEndedConn=nil
-
-local function cleanupSatVibDrag()
-if satVibInputChangedConn then satVibInputChangedConn:Disconnect() satVibInputChangedConn=nil end
-if satVibInputEndedConn then satVibInputEndedConn:Disconnect() satVibInputEndedConn=nil end
-satVibActiveTouch=nil
-satVibDragging=false
-end
-
-local function onSatVibInputChanged(input)
-if not satVibDragging then return end
-if satVibActiveTouch and input~=satVibActiveTouch then
-if input.UserInputType==Enum.UserInputType.Touch then return end
-end
-updateSatVibFromPosition(input.Position)
-end
-
-local function onSatVibInputEnded(input)
-if satVibActiveTouch and input==satVibActiveTouch then
-cleanupSatVibDrag()
-elseif not satVibActiveTouch and input.UserInputType==Enum.UserInputType.MouseButton1 then
-cleanupSatVibDrag()
-end
-end
-
-ax.UIElements.SatVibMap.InputBegan:Connect(function(input)
-if (input.UserInputType==Enum.UserInputType.MouseButton1 or input.UserInputType==Enum.UserInputType.Touch) and input.UserInputState==Enum.UserInputState.Begin and not satVibDragging then
-if IsPointInFrame(ax.UIElements.SatVibMap,input.Position) then
-satVibDragging=true
-satVibActiveTouch=input
-updateSatVibFromPosition(input.Position)
-satVibInputChangedConn=UserInputService.InputChanged:Connect(onSatVibInputChanged)
-satVibInputEndedConn=UserInputService.InputEnded:Connect(onSatVibInputEnded)
+am:Wait()
 end
 end
 end)
 
-local function updateHueFromPosition(Position)
-local pFrame=p
-local AbsPos=pFrame.AbsolutePosition
-local AbsSize=pFrame.AbsoluteSize
-local clampedPos=ClampToFrame(pFrame,Position)
-local L=AbsPos.Y
-local M=L+AbsSize.Y
-local N=clampedPos.Y
-ax.Hue=(N-L)/(M-L)
+aa.AddSignal(p.InputBegan,function(J)
+if J.UserInputType==Enum.UserInputType.MouseButton1 or J.UserInputType==Enum.UserInputType.Touch then
+while aj:IsMouseButtonPressed(Enum.UserInputType.MouseButton1)do
+local L=p.AbsolutePosition.Y
+local M=L+p.AbsoluteSize.Y
+local N=math.clamp(ao.Y,L,M)
+
+ax.Hue=((N-L)/(M-L))
 ax:Update()
-end
 
-local hueActiveTouch=nil
-local hueDragging=false
-local hueInputChangedConn=nil
-local hueInputEndedConn=nil
-
-local function cleanupHueDrag()
-if hueInputChangedConn then hueInputChangedConn:Disconnect() hueInputChangedConn=nil end
-if hueInputEndedConn then hueInputEndedConn:Disconnect() hueInputEndedConn=nil end
-hueActiveTouch=nil
-hueDragging=false
-end
-
-local function onHueInputChanged(input)
-if not hueDragging then return end
-if hueActiveTouch and input~=hueActiveTouch then
-if input.UserInputType==Enum.UserInputType.Touch then return end
-end
-updateHueFromPosition(input.Position)
-end
-
-local function onHueInputEnded(input)
-if hueActiveTouch and input==hueActiveTouch then
-cleanupHueDrag()
-elseif not hueActiveTouch and input.UserInputType==Enum.UserInputType.MouseButton1 then
-cleanupHueDrag()
-end
-end
-
-p.InputBegan:Connect(function(input)
-if (input.UserInputType==Enum.UserInputType.MouseButton1 or input.UserInputType==Enum.UserInputType.Touch) and input.UserInputState==Enum.UserInputState.Begin and not hueDragging then
-if IsPointInFrame(p,input.Position) then
-hueDragging=true
-hueActiveTouch=input
-updateHueFromPosition(input.Position)
-hueInputChangedConn=UserInputService.InputChanged:Connect(onHueInputChanged)
-hueInputEndedConn=UserInputService.InputEnded:Connect(onHueInputEnded)
+am:Wait()
 end
 end
 end)
 
 if ax.Transparency then
-local function updateTransparencyFromPosition(Position)
-local transFrame=C
-local AbsPos=transFrame.AbsolutePosition
-local AbsSize=transFrame.AbsoluteSize
-local clampedPos=ClampToFrame(transFrame,Position)
-local L=AbsPos.Y
-local M=L+AbsSize.Y
-local N=clampedPos.Y
+aa.AddSignal(C.InputBegan,function(J)
+if J.UserInputType==Enum.UserInputType.MouseButton1 or J.UserInputType==Enum.UserInputType.Touch then
+while aj:IsMouseButtonPressed(Enum.UserInputType.MouseButton1)do
+local L=C.AbsolutePosition.Y
+local M=L+C.AbsoluteSize.Y
+local N=math.clamp(ao.Y,L,M)
+
 ax.Transparency=1-((N-L)/(M-L))
 ax:Update()
-end
 
-local transActiveTouch=nil
-local transDragging=false
-local transInputChangedConn=nil
-local transInputEndedConn=nil
-
-local function cleanupTransDrag()
-if transInputChangedConn then transInputChangedConn:Disconnect() transInputChangedConn=nil end
-if transInputEndedConn then transInputEndedConn:Disconnect() transInputEndedConn=nil end
-transActiveTouch=nil
-transDragging=false
-end
-
-local function onTransInputChanged(input)
-if not transDragging then return end
-if transActiveTouch and input~=transActiveTouch then
-if input.UserInputType==Enum.UserInputType.Touch then return end
-end
-updateTransparencyFromPosition(input.Position)
-end
-
-local function onTransInputEnded(input)
-if transActiveTouch and input==transActiveTouch then
-cleanupTransDrag()
-elseif not transActiveTouch and input.UserInputType==Enum.UserInputType.MouseButton1 then
-cleanupTransDrag()
-end
-end
-
-C.InputBegan:Connect(function(input)
-if (input.UserInputType==Enum.UserInputType.MouseButton1 or input.UserInputType==Enum.UserInputType.Touch) and input.UserInputState==Enum.UserInputState.Begin and not transDragging then
-if IsPointInFrame(C,input.Position) then
-transDragging=true
-transActiveTouch=input
-updateTransparencyFromPosition(input.Position)
-transInputChangedConn=UserInputService.InputChanged:Connect(onTransInputChanged)
-transInputEndedConn=UserInputService.InputEnded:Connect(onTransInputEnded)
+am:Wait()
 end
 end
 end)
@@ -9623,12 +9289,15 @@ Locked=at.Locked or false,
 LockedTitle=at.LockedTitle,
 Default=at.Default or Color3.new(1,1,1),
 Callback=at.Callback or function()end,
+
 UIScale=at.UIScale,
 Transparency=at.Transparency,
 UIElements={}
 }
 
 local av=true
+
+
 
 au.ColorpickerFrame=a.load'B'{
 Title=au.Title,
@@ -9654,12 +9323,12 @@ Position=UDim2.new(1,0,0,0),
 ZIndex=2
 },nil,true)
 
+
 function au.Lock(aw)
 au.Locked=true
 av=false
 return au.ColorpickerFrame:Lock(au.LockedTitle)
 end
-
 function au.Unlock(aw)
 au.Locked=false
 av=true
@@ -9669,6 +9338,7 @@ end
 if au.Locked then
 au:Lock()
 end
+
 
 function au.Update(aw,ax,ay)
 au.UIElements.Colorpicker.ImageTransparency=ay or 0
@@ -9790,7 +9460,7 @@ Padding=UDim.new(0,4)
 
 local ap,aq
 
-function createTitle(ar,as)
+local function createTitle(ar,as)
 return ae("TextLabel",{
 BackgroundTransparency=1,
 TextXAlignment=al.TextXAlignment,
@@ -9820,7 +9490,7 @@ if al.Desc then
 aq=createTitle(al.Desc,"Desc")
 end
 
-function UpdateTitleSize()
+local function UpdateTitleSize()
 local ar=0
 if am then
 ar=ar-(al.IconSize+8)
@@ -10049,7 +9719,7 @@ local ae=aa.New
 
 local af={}
 
-function ParseAspectRatio(ah)
+local function ParseAspectRatio(ah)
 if type(ah)=="string"then
 local aj,ak=ah:match"(%d+):(%d+)"
 if aj and ak then
@@ -10892,7 +10562,7 @@ if ax and not au then
 au=ak(ap.Desc,am.ToolTipParent,true)
 au.Container.AnchorPoint=Vector2.new(0.5,0.5)
 
-function updatePosition()
+local function updatePosition()
 if au then
 au.Container.Position=UDim2.new(0,af.X,0,af.Y-4)
 end
@@ -11551,7 +11221,7 @@ Name="Outline",
 }),
 })
 
-function CreateSearchTab(at,au,av,aw,ax,ay)
+local function CreateSearchTab(at,au,av,aw,ax,ay)
 local az=ah("TextButton",{
 Size=UDim2.new(1,0,0,0),
 AutomaticSize="Y",
@@ -11711,7 +11381,7 @@ end)
 return az
 end
 
-function ContainsText(at,au)
+local function ContainsText(at,au)
 if not au or au==""then
 return false
 end
@@ -11726,7 +11396,7 @@ local aw=string.lower(au)
 return string.find(av,aw,1,true)~=nil
 end
 
-function Search(at)
+local function Search(at)
 if not at or at==""then
 return{}
 end
@@ -11997,7 +11667,7 @@ au.TopBarButtonIconSize=au.TopBarButtonIconSize or(au.Topbar.ButtonsType=="Mac"a
 
 au.ElementConfig={
 UIPadding=(au.NewElements and 10 or 13),
-UICorner=au.ElementsRadius or(au.NewElements and 23 or 12),
+UICorner=au.ElementsRadius or(au.NewElements and 23 or 16),
 }
 
 local av=au.Size or UDim2.new(0,580,0,460)
@@ -12220,7 +11890,7 @@ end
 
 local aB
 if au.User then
-function GetUserThumb()local
+local function GetUserThumb()local
 b=ah:GetUserThumbnailAsync(
 au.User.Anonymous and 1 or ah.LocalPlayer.UserId,
 Enum.ThumbnailType.HeadShot,
@@ -12396,25 +12066,31 @@ local g
 local h=typeof(au.Background)=="string"and string.match(au.Background,"^video:(.+)")or nil
 local j=typeof(au.Background)=="string"
 and not h
-and string.match(au.Background,"^(https?://.+|rbx%w+://.+)")
+and(string.match(au.Background,"^https?://.+")or string.match(au.Background,"^rbx%w+://.+"))
 or nil
 
-function GetImageExtension(l)
-local m=l:match"%.(%w+)$"or l:match"%.(%w+)%?"
-if m then
-m=m:lower()
-if m=="jpg"or m=="jpeg"or m=="png"or m=="webp"then
-return"."..m
+local function GetImageExtension(l)
+if not l or typeof(l)~="string"then
+return".png"
+end
+local m=l:match"^([^?#]+)"or l
+local p=m:match"%.(%w+)$"
+if p then
+p=p:lower()
+if p=="jpg"or p=="jpeg"or p=="png"or p=="webp"then
+return"."..p
 end
 end
 return".png"
 end
 
+print(GetImageExtension(j))
+
 if typeof(au.Background)=="string"and h then
 f=true
 
 if string.find(h,"http")then
-local l=au.Folder.."/assets/."..al.SanitizeFilename(h)..".webm"
+local l=(au.Folder or"Temp").."/assets/."..al.SanitizeFilename(h)..".webm"
 if not isfile(l)then
 local m,p=pcall(function()
 
@@ -12423,7 +12099,13 @@ local m,p=pcall(function()
 
 
 local m=game.HttpGet and game:HttpGet(h)
-writefile(l,m.Body)
+or al.Request{
+Url=h,
+Method="GET",
+Headers={["User-Agent"]="Roblox/Exploit"},
+}.Body
+print(m)
+writefile(l,m)
 end)
 if not m then
 warn("[ WindUI.Window.Background ] Failed to download video: "..tostring(p))
@@ -12455,7 +12137,7 @@ CornerRadius=UDim.new(0,au.UICorner),
 })
 g:Play()
 elseif j then
-local l=au.Folder
+local l=(au.Folder or"Temp")
 .."/assets/."
 ..al.SanitizeFilename(j)
 ..GetImageExtension(j)
@@ -12467,7 +12149,13 @@ local m,p=pcall(function()
 
 
 local m=game.HttpGet and game:HttpGet(j)
-writefile(l,m.Body)
+or al.Request{
+Url=h,
+Method="GET",
+Headers={["User-Agent"]="Roblox/Exploit"},
+}.Body
+print(m)
+writefile(l,m)
 end)
 if not m then
 warn("[ Window.Background ] Failed to download image: "..tostring(p))
@@ -13784,334 +13472,124 @@ end
 end,(au.Topbar.ButtonsType=="Default"and 999 or 997),nil,Color3.fromHex"#F4695F")
 
 function au.Tag(G,H)
-    if au.UIElements.Main.Main.Topbar.Center.Visible == false then
-        au.UIElements.Main.Main.Topbar.Center.Visible = true
-    end
-    H.Window = au
-    local tag = ar:New(H, au.UIElements.Main.Main.Topbar.Center)
-    
-    local centerFrame = au.UIElements.Main.Main.Topbar.Center
-    local contentContainer = centerFrame:FindFirstChild("UIListLayout") or centerFrame:FindFirstChildOfClass("UIListLayout")
-    
-    function updateScrolling()
-        local totalContentWidth = 0
-        if contentContainer then
-            totalContentWidth = contentContainer.AbsoluteContentSize.X
-        else
-            local children = centerFrame:GetChildren()
-            for _, child in ipairs(children) do
-                if child:IsA("GuiObject") and child.Visible then
-                    totalContentWidth = totalContentWidth + child.AbsoluteSize.X
-                end
-            end
-        end
-        
-        if totalContentWidth <= centerFrame.AbsoluteSize.X then
-            centerFrame.ScrollingEnabled = false
-        else
-            centerFrame.ScrollingEnabled = true
-        end
-    end
-    
-    centerFrame:GetPropertyChangedSignal("AbsoluteSize"):Connect(updateScrolling)
-    
-    if contentContainer then
-        contentContainer:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateScrolling)
-    end
-    
-    function onChildAdded()
-        updateScrolling()
-    end
-    
-    function onChildRemoved()
-        updateScrolling()
-    end
-    
-    centerFrame.ChildAdded:Connect(onChildAdded)
-    centerFrame.ChildRemoved:Connect(onChildRemoved)
-    
-    for _, child in ipairs(centerFrame:GetChildren()) do
-        if child:IsA("GuiObject") then
-            child:GetPropertyChangedSignal("Visible"):Connect(updateScrolling)
-            child:GetPropertyChangedSignal("Size"):Connect(updateScrolling)
-            child:GetPropertyChangedSignal("Position"):Connect(updateScrolling)
-        end
-    end
-    
-    function onDescendantAdded(descendant)
-        if descendant:IsA("GuiObject") then
-            descendant:GetPropertyChangedSignal("Visible"):Connect(updateScrolling)
-            descendant:GetPropertyChangedSignal("Size"):Connect(updateScrolling)
-            descendant:GetPropertyChangedSignal("Position"):Connect(updateScrolling)
-            updateScrolling()
-        end
-    end
-    
-    centerFrame.DescendantAdded:Connect(onDescendantAdded)
-    
-    updateScrolling()
-    
-    return tag
+if au.UIElements.Main.Main.Topbar.Center.Visible==false then
+au.UIElements.Main.Main.Topbar.Center.Visible=true
 end
-local isResizeDragging = {}
-
-function isResizeDragging.GetDistance(pos1, pos2)
-    return math.sqrt((pos2.X - pos1.X)^2 + (pos2.Y - pos1.Y)^2)
+H.Window=au
+return ar:New(H,au.UIElements.Main.Main.Topbar.Center)
 end
 
-function isResizeDragging.IsMouseOverFrame(Frame, Position)
-    local AbsPos, AbsSize = Frame.AbsolutePosition, Frame.AbsoluteSize
-    return Position.X >= AbsPos.X and Position.X <= AbsPos.X + AbsSize.X and 
-           Position.Y >= AbsPos.Y and Position.Y <= AbsPos.Y + AbsSize.Y
+local function startResizing(G)
+if au.CanResize then
+isResizing=true
+ay.Active=true
+initialSize=au.UIElements.Main.Size
+initialInputPosition=G.Position
+
+
+an(ax.ImageLabel,0.1,{ImageTransparency=0.35}):Play()
+
+al.AddSignal(G.Changed,function()
+if G.UserInputState==Enum.UserInputState.End then
+isResizing=false
+ay.Active=false
+
+
+an(ax.ImageLabel,0.17,{ImageTransparency=0.8}):Play()
+end
+end)
+end
 end
 
-function isResizeDragging.MakeResizable(ResizeHandle, TargetFrame, CallbackTable)
-    if not ResizeHandle or not TargetFrame then return end
-    
-    local isResizing = false
-    local resizeStart = nil
-    local initialSize = nil
-    local initialPosition = nil
-    local resizeDistance = 0
-    local RESIZE_THRESHOLD = 3
-    local isResizingStarted = false
-    local currentTouch = nil
-    
-    if CallbackTable then
-        if CallbackTable.MinSize then MIN_SIZE = CallbackTable.MinSize end
-        if CallbackTable.MaxSize then MAX_SIZE = CallbackTable.MaxSize end
-    end
-    
-    local function getScreenSize()
-        local camera = workspace.CurrentCamera
-        if camera then
-            return camera.ViewportSize
-        else
-            return game:GetService("UserInputService"):GetMouseLocation()
-        end
-    end
-    
-    local function updateSize(input)
-        if not isResizing or not resizeStart then return end
-        local delta = input.Position - resizeStart
-        resizeDistance = math.sqrt(delta.X^2 + delta.Y^2)
-        
-        local newWidth = initialSize.X.Offset + delta.X * 2
-        local newHeight = initialSize.Y.Offset + delta.Y * 2
-        
-        newWidth = math.clamp(newWidth, MIN_SIZE.X, MAX_SIZE.X)
-        newHeight = math.clamp(newHeight, MIN_SIZE.Y, MAX_SIZE.Y)
-        
-        local newSize = UDim2.new(initialSize.X.Scale, newWidth, initialSize.Y.Scale, newHeight)
-        
-        TargetFrame.Size = newSize
-        
-        if CallbackTable and CallbackTable.OnResizeUpdate then
-            CallbackTable.OnResizeUpdate(TargetFrame.Size, resizeDistance)
-        end
-    end
-    
-    local function resetResizeState()
-        isResizing = false
-        resizeStart = nil
-        initialSize = nil
-        initialPosition = nil
-        resizeDistance = 0
-        isResizingStarted = false
-        currentTouch = nil
-    end
-    
-    local mouseButton1Connection = nil
-    local touchEndedConnection = nil
-    local movementConnection = nil
-    
-    local function onInputEnded()
-        if isResizing then
-            local wasResized = resizeDistance > RESIZE_THRESHOLD
-            if wasResized and isResizingStarted then
-                if CallbackTable and CallbackTable.OnResizeEnd then
-                    CallbackTable.OnResizeEnd(TargetFrame.Size, wasResized)
-                end
-            end
-            resetResizeState()
-            
-            if mouseButton1Connection then
-                mouseButton1Connection:Disconnect()
-                mouseButton1Connection = nil
-            end
-            if touchEndedConnection then
-                touchEndedConnection:Disconnect()
-                touchEndedConnection = nil
-            end
-            if movementConnection then
-                movementConnection:Disconnect()
-                movementConnection = nil
-            end
-        end
-    end
-    
-    local function onInputEndedHandler(endInput)
-        if isResizing then
-            if endInput.UserInputType == Enum.UserInputType.MouseButton1 then
-                onInputEnded()
-            elseif endInput.UserInputType == Enum.UserInputType.Touch and endInput == currentTouch then
-                onInputEnded()
-            end
-        end
-    end
-    
-    local function onMovement(input)
-        if isResizing and (input.UserInputType == Enum.UserInputType.MouseMovement or input == currentTouch) then
-            if not isResizingStarted and resizeDistance > RESIZE_THRESHOLD then
-                isResizingStarted = true
-                if CallbackTable and CallbackTable.OnResizeStart then
-                    CallbackTable.OnResizeStart()
-                end
-            end
-            updateSize(input)
-        end
-    end
-    
-    local function onInputBegan(input)
-        if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) and 
-           input.UserInputState == Enum.UserInputState.Begin and not isResizing then
-            
-            if isResizeDragging.IsMouseOverFrame(ResizeHandle, input.Position) then
-                isResizing = true
-                resizeStart = input.Position
-                initialSize = TargetFrame.Size
-                initialPosition = TargetFrame.Position
-                resizeDistance = 0
-                isResizingStarted = false
-                
-                if input.UserInputType == Enum.UserInputType.Touch then
-                    currentTouch = input
-                else
-                    currentTouch = nil
-                end
-                
-                if CallbackTable and CallbackTable.OnResizeHandleHover then
-                    CallbackTable.OnResizeHandleHover(true)
-                end
-                
-                mouseButton1Connection = game:GetService("UserInputService").InputEnded:Connect(function(endInput)
-                    if endInput.UserInputType == Enum.UserInputType.MouseButton1 then
-                        onInputEndedHandler(endInput)
-                    end
-                end)
-                touchEndedConnection = game:GetService("UserInputService").InputEnded:Connect(function(endInput)
-                    if endInput.UserInputType == Enum.UserInputType.Touch then
-                        onInputEndedHandler(endInput)
-                    end
-                end)
-                movementConnection = game:GetService("UserInputService").InputChanged:Connect(function(moveInput)
-                    if moveInput.UserInputType == Enum.UserInputType.MouseMovement or moveInput.UserInputType == Enum.UserInputType.Touch then
-                        onMovement(moveInput)
-                    end
-                end)
-            end
-        end
-    end
-    
-    local hoverConnection = nil
-    local hoverLeaveConnection = nil
-    
-    if CallbackTable and CallbackTable.OnResizeHandleHover then
-        hoverConnection = ResizeHandle.MouseEnter:Connect(function()
-            if not isResizing then
-                CallbackTable.OnResizeHandleHover(true)
-            end
-        end)
-        
-        hoverLeaveConnection = ResizeHandle.MouseLeave:Connect(function()
-            if not isResizing then
-                CallbackTable.OnResizeHandleHover(false)
-            end
-        end)
-    end
-    
-    local inputBeganConnection = ResizeHandle.InputBegan:Connect(onInputBegan)
-    
-    local cleanupFunction = function()
-        inputBeganConnection:Disconnect()
-        if hoverConnection then hoverConnection:Disconnect() end
-        if hoverLeaveConnection then hoverLeaveConnection:Disconnect() end
-        if mouseButton1Connection then mouseButton1Connection:Disconnect() end
-        if touchEndedConnection then touchEndedConnection:Disconnect() end
-        if movementConnection then movementConnection:Disconnect() end
-    end
-    
-    return cleanupFunction
+al.AddSignal(ax.InputBegan,function(G)
+if
+G.UserInputType==Enum.UserInputType.MouseButton1
+or G.UserInputType==Enum.UserInputType.Touch
+then
+if au.CanResize then
+startResizing(G)
 end
-
-local resizeHandle = ax.ImageLabel
-local targetFrame = au.UIElements.Main
-
-if resizeCleanup then resizeCleanup() end
-
-resizeCleanup = isResizeDragging.MakeResizable(resizeHandle, targetFrame, {
-    MinSize = Vector2.new(443, 173),
-    MaxSize = Vector2.new(1920, 1080),
-    
-    OnResizeStart = function()
-        ay.Active = true
-        an(resizeHandle, 0.1, {ImageTransparency = 0.35}):Play()
-    end,
-    
-    OnResizeUpdate = function(newSize, distance)
-        au.Size = newSize
-    end,
-    
-    OnResizeEnd = function(finalSize, wasResized)
-        ay.Active = false
-        an(resizeHandle, 0.17, {ImageTransparency = 0.8}):Play()
-    end,
-    
-    OnResizeHandleHover = function(isHovering)
-        if isHovering then
-            an(resizeHandle, 0.1, {ImageTransparency = 0.35}):Play()
-        else
-            an(resizeHandle, 0.17, {ImageTransparency = 0.8}):Play()
-        end
-    end
-})
-
-local lastClickTime = 0
-local doubleClickDelay = 0.4
-local lastClickPosition = nil
-local clickCount = 0
-
-local doubleClickConnection = resizeHandle.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        local currentTime = tick()
-        
-        clickCount = clickCount + 1
-        
-        if clickCount == 1 then
-            lastClickTime = currentTime
-            lastClickPosition = au.Position
-            
-            task.spawn(function()
-                task.wait(doubleClickDelay)
-                if clickCount == 1 then
-                    clickCount = 0
-                    lastClickPosition = nil
-                end
-            end)
-        elseif clickCount == 2 then
-            if currentTime - lastClickTime <= doubleClickDelay and lastClickPosition == au.Position then
-                au:SetToTheCenter()
-            end
-            clickCount = 0
-            lastClickPosition = nil
-        end
-    end
+end
 end)
 
-local function fullCleanup()
-    if resizeCleanup then resizeCleanup() end
-    if doubleClickConnection then doubleClickConnection:Disconnect() end
+al.AddSignal(ae.InputChanged,function(G)
+if
+G.UserInputType==Enum.UserInputType.MouseMovement
+or G.UserInputType==Enum.UserInputType.Touch
+then
+if isResizing and au.CanResize then
+local H=G.Position-initialInputPosition
+local J=UDim2.new(0,initialSize.X.Offset+H.X*2,0,initialSize.Y.Offset+H.Y*2)
+
+J=UDim2.new(
+J.X.Scale,
+math.clamp(J.X.Offset,au.MinSize.X,au.MaxSize.X),
+J.Y.Scale,
+math.clamp(J.Y.Offset,au.MinSize.Y,au.MaxSize.Y)
+)
+
+an(au.UIElements.Main,0.08,{
+Size=J,
+},Enum.EasingStyle.Quad,Enum.EasingDirection.Out):Play()
+
+au.Size=J
 end
+end
+end)
+
+al.AddSignal(ax.MouseEnter,function()
+if not isResizing then
+an(ax.ImageLabel,0.1,{ImageTransparency=0.35}):Play()
+end
+end)
+al.AddSignal(ax.MouseLeave,function()
+if not isResizing then
+an(ax.ImageLabel,0.17,{ImageTransparency=0.8}):Play()
+end
+end)
+
+
+
+local G=0
+local H=0.4
+local J
+local L=0
+
+function onDoubleClick()
+au:SetToTheCenter()
+end
+
+al.AddSignal(l.Frame.MouseButton1Up,function()
+local M=tick()
+local N=au.Position
+
+L=L+1
+
+if L==1 then
+G=M
+J=N
+
+task.spawn(function()
+task.wait(H)
+if L==1 then
+L=0
+J=nil
+end
+end)
+elseif L==2 then
+if M-G<=H and N==J then
+onDoubleClick()
+end
+
+L=0
+J=nil
+G=0
+else
+L=1
+G=M
+J=N
+end
+end)
 
 
 
@@ -14509,7 +13987,7 @@ local aB=aA()
 if aw.KeySystem then
 ay=false
 
-function loadKeysystem()
+local function loadKeysystem()
 an.new(aw,aB,function(b)
 ay=b
 end)
